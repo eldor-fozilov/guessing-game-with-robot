@@ -1,0 +1,20 @@
+ROS2 설치
+humble(for ubuntu 22.04): https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html
+foxy(for ubuntu 20.04): https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Debians.html
+
+----
+
+moveit2 설치
+https://moveit.ai/install-moveit2/source/
+https://moveit.picknik.ai/main/doc/tutorials/getting_started/getting_started.html
+- ROS2 설치 후 첫번째 링크의 Create Workspace and Source 전까지 모든 명령어 실행 후 두번째 링크의 처음부터 설치
+- 두번째 링크에서 vcs import --recursive < moveit2_tutorials/moveit2_tutorials.repos 명령어는 건너뛰고 끝까지 진행(빌드 시 패키지 갯수가 10개 미만(4~5))
+- 두번째 링크의 다음 페이지 'MoveIt Quickstart in RViz'만 돌아가면 성공
+- 중간에 뜨는 오류(moveit_task_constructor 등)은 gpt로 해결
+
+---
+
+패키지 실행
+- dynamixel 제어: ros2 run dynamixel_control read_write_node
+- moveit2 실행: ros2 launch koch demo.launch.py
+- urdf 불러오기: ros2 launch low_cost_robot_description display.launch.py
