@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRI Test System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>HRI Test System</h1>
+        <p id="status" class="status-message">Status: Ready</p>
+
+        <!-- Step 1: Camera Search -->
+        <div class="step">
+            <h2>(1) Search for Cameras</h2>
+            <button class="btn" onclick="searchCameras()">Search Cameras</button>
+            <select id="camera_select" class="dropdown">
+                <option disabled selected>Select your Camera</option>
+            </select>
+        </div>
+
+        <!-- Step 2: Camera Connection -->
+        <div class="step">
+            <h2>(2) Connect to a Camera</h2>
+            <button class="btn" onclick="connectCamera()">Connect</button>
+        </div>
+
+        <!-- Step 3: Object Detection and Clue Input -->
+        <div class="detection is_row">
+            <!-- Video Stream -->
+            <div class="detection-left is_col">
+                <h2>Object Detection</h2>
+                <img id="video_feed" alt="Camera Feed" class="video-feed">
+            </div>
+
+            <!-- Clue Input and Results -->
+            <div class="detection-right is_col">
+                <h2>(3) Enter a Clue</h2>
+                <textarea id="clue_input" class="clue-input" placeholder="Enter your clue here"></textarea>
+                <button class="btn" onclick="generateAnswer()">Generate Answer</button>
+
+                <h3>Detected Objects with Coordinates</h3>
+                <ul id="object_list" class="object-list"></ul>
+
+                <h3>Result</h3>
+                <p id="answer_output" class="result">Answer: </p>
+                <p id="latency_output" class="result">Latency: </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>

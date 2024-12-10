@@ -1,0 +1,10 @@
+flask
+flask-scss
+opencv-python
+ultralytics
+torch
+flask-assets
+libsass
+transformers
+huggingface_hub
+accelerate>=0.26.0

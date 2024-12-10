@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Camera</title>
+</head>
+<body>
+    <h1>사용 가능한 카메라 선택</h1>
+    <form method="POST" action="/select_camera">
+        <label for="camera_index">카메라:</label>
+        <select name="camera_index" id="camera_index">
+            {% for camera in cameras %}
+                <option value="{{ camera }}">카메라 {{ camera }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">선택</button>
+    </form>
+</body>
+</html>
