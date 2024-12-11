@@ -28,6 +28,7 @@ body {
  /* **************************** */
 .is_col {
   width: 100%;
+  margin: 10px;
   height: min-content;
   
   display: flex;
@@ -40,6 +41,7 @@ body {
   
   display: flex;
   flex-direction: row;
+  justify-content: space-around;
 }
  /* **************************** */
 
@@ -68,6 +70,9 @@ body {
 
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  border-color: black;
+  border: solid;
 }
 
 h1 {
@@ -75,19 +80,21 @@ h1 {
   margin-bottom: 15px;
   color: #444;
 }
+h2 {
+  font-size: 1.5rem;
+  padding: 0;
+  margin: 0 0 10px 0;
+  color: #444;
+}
 
 button {
   background-color: #4caf50;
-  /* 초록색 버튼 */
   color: white;
   border: none;
   padding: 10px 15px;
-  /* 버튼 크기 축소 */
-  margin: 10px 0;
+  margin: 10px;
   border-radius: 4px;
-  /* 약간 둥근 모서리 */
   font-size: 0.9rem;
-  /* 버튼 텍스트 크기 축소 */
   cursor: pointer;
   transition: 0.2s ease;
 }
@@ -102,10 +109,9 @@ button.btn:active {
 
 p#status {
   margin-top: 15px;
-  /* 약간의 여백 */
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: #555;
-  /* 상태 메시지 색상 */ }
+}
 
 select {
   margin: 15px 0;
@@ -167,6 +173,67 @@ textarea#clue_input:focus {
   border-radius: 4px;
 }
 
+/* **************************** */
+.decision_box {
+  width: 20%;
+  height: min-content;
+}
+.decision_box .btn{
+  margin: auto;
+}
+
+/* 빵빠레 컨테이너 */
+#confetti {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+/* 빵빠레 조각 */
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 20px;
+  background-color: var(--confetti-color, #ff6347);
+  border-radius: 2px;
+  animation: confetti-fall 2s linear infinite;
+  opacity: 0.8;
+}
+
+.is_row {
+  display: flex;
+  align-items: center;
+}
+
+.space-between {
+  justify-content: space-between;
+}
 
 
 
+@keyframes confetti-fall {
+  0% {
+      transform: translateY(-100px) rotate(0deg);
+      opacity: 1;
+  }
+  100% {
+      transform: translateY(800px) rotate(360deg);
+      opacity: 0;
+  }
+}
+
+/* 다양한 색상을 위한 스타일 */
+.confetti-piece:nth-child(1) { --confetti-color: #ff6347; left: 10%; }
+.confetti-piece:nth-child(2) { --confetti-color: #ffa500; left: 30%; }
+.confetti-piece:nth-child(3) { --confetti-color: #ffff00; left: 50%; }
+.confetti-piece:nth-child(4) { --confetti-color: #32cd32; left: 70%; }
+.confetti-piece:nth-child(5) { --confetti-color: #1e90ff; left: 90%; }
+.confetti-piece:nth-child(6) { --confetti-color: #ff1493; left: 20%; }
+.confetti-piece:nth-child(7) { --confetti-color: #9400d3; left: 40%; }
+.confetti-piece:nth-child(8) { --confetti-color: #00ced1; left: 60%; }
+.confetti-piece:nth-child(9) { --confetti-color: #7cfc00; left: 80%; }

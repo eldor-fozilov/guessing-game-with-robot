@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, Response
+from flask import Blueprint, g, render_template, request, jsonify, Response
 from .camera import Camera, list_cameras
 from ultralytics import YOLO
 import cv2
@@ -7,19 +7,21 @@ import torch
 from transformers import pipeline
 import time
 import datetime
+import whisper
 from huggingface_hub import login
 import os
 from queue import Queue
+from stt_and_tts import listen, understand, speak
 
 main = Blueprint('main', __name__)
 
 # ----------------------------------------------
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
-login(token=os.getenv("HUGGINGFACEHUB_API_TOKEN"))
+# os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
+# login(token=os.getenv("HUGGINGFACEHUB_API_TOKEN"))
 
 
 # YOLO 모델 로드
-yolo_model = YOLO("models/yolo11x.pt")
+yolo_model = YOLO("models/yolo11n.pt")
 yolo_model.fuse()
 
 # LLM 모델 로드
@@ -34,9 +36,7 @@ pad_token_id = pipe.model.config.eos_token_id
 if isinstance(pad_token_id, list):
     pad_token_id = pad_token_id[0]
 
-if torch.backends.mps.is_available():
-    device = "mps"
-elif torch.cuda.is_available():
+if torch.cuda.is_available():
     device = "cuda"
 else:
     device = "cpu"
@@ -47,10 +47,21 @@ print(f"YOLO/LLM 모델이 {device}에서 실행됩니다.")
 
 # ----------------------------------------------
 
+# Load Whisper model for STT
+whisper_model = whisper.load_model("tiny")
+print("Whisper 모델", whisper_model)
+
 camera_instance = None
 camera_search_results = []
 buffer = Queue(maxsize=60)
 
+last_llm_answer = None
+last_transcription = None
+
+recording_thread = None
+
+# Define a global variable for the current solution pipeline
+current_solution = None
 
 def list_cameras():
     """사용 가능한 카메라 장치를 검색"""
@@ -174,99 +185,191 @@ def video_feed():
 
 @main.route("/generate_answer", methods=["POST"])
 def generate_answer():
-    """LLM으로 객체 선택"""
-    global buffer
+    global buffer, last_llm_answer, last_transcription, current_solution
     data = request.json
     clue = data.get("clue", "").strip()
+    excluded_objects = data.get("excluded_objects", [])
 
     if not clue:
-        return jsonify({"error": "Clue is missing"}), 400
+        if last_transcription and last_transcription.strip():
+            clue = last_transcription.strip()
+        else:
+            return jsonify({"error": "No clue provided. Either type text or record audio first."}), 400
 
-    # 버퍼에서 2초 전후의 객체 데이터 수집
-    detected_objects = list(buffer.queue)  # 버퍼의 모든 데이터 가져오기
-    flattened_objects = [obj for sublist in detected_objects for obj in sublist]  # 중첩 리스트 평탄화
-    unique_objects = list(set(obj["name"] for obj in flattened_objects))  # 고유한 객체 이름
+    detected_objects = list(buffer.queue)
+    flattened_objects = [obj for sublist in detected_objects for obj in sublist]
+    unique_objects = list(set(obj["name"] for obj in flattened_objects))
 
-    # LLM 입력 생성
-    user_prompt1 = f'''You are an assistant whose task is to identify the correct object from this list {unique_objects} that aligns best with the following clue: '{clue}'.
-    Take a moment to think about each object's properties, considering how the clue relates to them, directly or indirectly.
-    Then, provide only the name of the correct object as your answer. No additional explanations.
-    The answer is: '''
+    # Remove excluded objects
+    unique_objects = [obj for obj in unique_objects if obj not in excluded_objects]
 
-    messages = [{"role": "user", "content": user_prompt1}]
+    if current_solution == "YOLO and LLM":
+        # user_prompt = f"""You are an assistant whose task is to identify the correct object from this list {unique_objects} that aligns best with the following clue: '{clue}'.
+        # Some objects have been previously identified as incorrect: {excluded_objects}.
+        # Exclude them from consideration.
+        # Provide only the name of the correct object as your answer. No additional explanations.
+        # The answer is: """
 
-    print("LLM 입력:", messages)
+        user_prompt = f"""You are an assistant whose task is to identify the correct object from this list {unique_objects} that aligns best with the following clue: '{clue}'.
+        Some objects have been previously identified as incorrect: {excluded_objects}.
+        Exclude them from consideration.
+        Provide the name of the correct object first as your answer and a very short reason why you chose that object.
+        The answer is: """
 
-    # LLM 수행
-    start = time.time()
-    outputs = pipe(
-        messages,
-        max_new_tokens=50,
-        pad_token_id=pad_token_id,
-        do_sample=False,
-    )
-    end = time.time()
+        messages = [{"role": "user", "content": user_prompt}]
+        print("LLM 입력:", messages)
 
-    latency = str(datetime.timedelta(seconds=(end - start)))
+        start = time.time()
+        outputs = pipe(
+            messages,
+            max_new_tokens=50,
+            pad_token_id=pad_token_id,
+            do_sample=False,
+        )
+        end = time.time()
+        latency = str(datetime.timedelta(seconds=(end - start)))
 
-    # LLM 결과 추출 및 처리
-    print("LLM Outputs:", outputs)
-    if (
-        isinstance(outputs, list)
-        and "generated_text" in outputs[0]
-    ):
-        full_result = outputs[0]["generated_text"]
-    else:
-        return jsonify({"error": "Unexpected LLM output format.", "outputs": outputs}), 500
+        print("LLM Outputs:", outputs)
+        if isinstance(outputs, list) and "generated_text" in outputs[0]:
+            full_result = outputs[0]["generated_text"]
+        else:
+            return jsonify({"error": "Unexpected LLM output format.", "outputs": outputs}), 500
 
-    print("LLM 전체 결과:", full_result)
+        print("LLM 전체 결과:", full_result)
 
-    # 결과에서 감지된 객체와 매칭되는 이름 추출
-    assistant_content = None
-    for item in full_result:
-        if item.get("role") == "assistant":
-            assistant_content = item.get("content")
-            break  # 첫 번째 assistant 역할을 찾으면 중단
+        assistant_content = None
+        for item in full_result:
+            if item.get("role") == "assistant":
+                assistant_content = item.get("content")
+                break
 
-    print("추출된 content:", assistant_content)
+        if not assistant_content:
+            if isinstance(full_result, list):
+                assistant_content = "No matching object found."
+            else:
+                assistant_content = full_result.strip()
 
-    # 매칭된 객체가 없는 경우 처리
-    if not assistant_content:
+        print("추출된 content:", assistant_content)
+
+        x1, y1, x2, y2 = 0, 0, 0, 0
+        found_match = False
+        for frame_objects in detected_objects:
+            for obj_data_iter in frame_objects:
+                if obj_data_iter["name"].lower() == assistant_content.lower():
+                    x1, y1, x2, y2 = obj_data_iter["coords"]
+                    found_match = True
+                    break
+            if found_match:
+                break
+
+        last_llm_answer = assistant_content
+
+        if not found_match:
+            return jsonify({
+                "answer": assistant_content,
+                "latency": latency,
+                "positions": None
+            })
+
         return jsonify({
-            "answer": "No matching object found.",
+            "answer": assistant_content,
             "latency": latency,
-            "positions": None
+            "positions": "yes",
+            "x1": x1,
+            "y1": y1,
+            "x2": x2,
+            "y2": y2,
+            "obj_data": assistant_content
         })
 
-    # 결과와 일치하는 물체의 좌표 검색
-    matched_position = None
-    x1, y1, x2, y2 = 0, 0, 0, 0
-    obj_data = None
-    print("감지된 객체:", detected_objects)
-    print("추출된 content:", assistant_content)
-    for i, frame_objects in enumerate(detected_objects):
-        for obj_data in frame_objects:
-            print("obj_data:", obj_data)
-            print("obj_data['name']:", obj_data["name"].lower())
-            print("assistant_content:", assistant_content.lower())
+    elif current_solution == "VLM and YOLO World":
+        # Similar logic for VLM and YOLO World pipeline (placeholder)
+        # For demonstration, simulate a result that respects excluded_objects
+        filtered_unique_objects = [obj for obj in unique_objects if obj not in excluded_objects]
+        assistant_content = filtered_unique_objects[0] if filtered_unique_objects else "No matching object found"
 
-            if obj_data["name"].lower() == assistant_content.lower():
-                print ("Matched")
-                obj_data = obj_data
-                x1, y1, x2, y2 = obj_data["coords"]
-
+        latency = "0:00:01"
+        x1, y1, x2, y2 = 0,0,0,0
+        found_match = False
+        for frame_objects in detected_objects:
+            for obj_data_iter in frame_objects:
+                if obj_data_iter["name"].lower() == assistant_content.lower():
+                    x1, y1, x2, y2 = obj_data_iter["coords"]
+                    found_match = True
+                    break
+            if found_match:
                 break
-        if matched_position:  # 첫 번째 좌표를 찾으면 중단
-            print(f"Matched Object: {assistant_content}, Coordinates: {x1}, {y1}, {x2}, {y2}")
-            break
+
+        last_llm_answer = assistant_content
+
+        if not found_match:
+            return jsonify({
+                "answer": assistant_content,
+                "latency": latency,
+                "positions": None
+            })
+
+        return jsonify({
+            "answer": assistant_content,
+            "latency": latency,
+            "positions": "yes",
+            "x1": x1,
+            "y1": y1,
+            "x2": x2,
+            "y2": y2,
+            "obj_data": assistant_content
+        })
+
+    else:
+        return jsonify({"error": "No valid solution pipeline selected."}), 400
 
 
-    return jsonify({
-        "answer": assistant_content,
-        "latency": latency,
-        "positions": "yes",
-        "x1": x1,
-        "y1": y1,
-        "x2": x2,
-        "y2": y2
-    })
+    
+@main.route('/select_solution', methods=['POST'])
+def select_solution():
+    global current_solution
+    data = request.get_json()
+    solution = data.get('solution')
+    if not solution:
+        return jsonify({"error": "No solution provided"}), 400
+    
+    # Set the global variable
+    current_solution = solution
+    return jsonify({"status": "solution set", "current_solution": current_solution})
+
+
+@main.route('/start_listen', methods=['POST'])
+def start_listen():
+    global recording_thread
+    if recording_thread and recording_thread.is_alive():
+        return jsonify({"status": "already recording"}), 400
+    # Start the listen function in a separate thread
+    recording_thread = threading.Thread(target=listen, kwargs={"max_duration": 60, "output_path": "recorded_audio.wav"})
+    recording_thread.start()
+    return jsonify({"status": "recording started"})
+
+@main.route('/stop_listen', methods=['POST'])
+def stop_listen():
+    global stop_recording_flag, recording_thread, whisper_model, device
+    stop_recording_flag = True
+    if recording_thread:
+        recording_thread.join()
+        recording_thread = None
+
+    # After recording stops, we have recorded_audio.wav
+    # Now run understand() to get transcription
+    # Make sure you have whisper_model already loaded.
+    transcription = understand(whisper_model, device, filename="recorded_audio.wav")
+
+    return jsonify({"status": "recording stopped", "transcription": transcription})
+
+@main.route('/speak_llm_output', methods=['POST'])
+def speak_llm_output():
+    global last_llm_answer
+    if not last_llm_answer:
+        return jsonify({"error": "No LLM answer to speak."}), 400
+
+    # Convert LLM answer to speech and play it
+    speak(last_llm_answer)
+
+    return jsonify({"status": "Playing LLM speech"})

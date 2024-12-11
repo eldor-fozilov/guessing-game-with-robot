@@ -13,20 +13,59 @@
         <h1>HRI Test System</h1>
         <p id="status" class="status-message">Status: Ready</p>
 
-        <!-- Step 1: Camera Search -->
-        <div class="step">
-            <h2>(1) Search for Cameras</h2>
-            <button class="btn" onclick="searchCameras()">Search Cameras</button>
-            <select id="camera_select" class="dropdown">
-                <option disabled selected>Select your Camera</option>
-            </select>
-        </div>
+        <div class="is_row">
+            <div class="is_col">
+                <div class="initial_setup is_row">
+                    <!-- Solution Pipeline -->
+                    <div class="step">
+                        <h2>(1) Select Pipeline</h2>
+                        <div class="is_row space-between">
+                            <button class="btn" onclick="selectSolution()">Select Pipeline</button>
+                            <select id="solution_select" class="dropdown">
+                                <option value="">-- pipeline --</option>
+                                <option value="YOLO and LLM">YOLO and LLM</option>
+                                <option value="VLM and YOLO World">VLM and YOLO World</option>
+                            </select>
+                        </div>
+                    </div>
 
-        <!-- Step 2: Camera Connection -->
-        <div class="step">
-            <h2>(2) Connect to a Camera</h2>
-            <button class="btn" onclick="connectCamera()">Connect</button>
+                    <!-- Step 2: Camera Search -->
+                    <div class="step">
+                        <h2>(2) Search for Cameras</h2>
+                        <button class="btn" onclick="searchCameras()">Search Cameras</button>
+                    </div>
+
+                    <!-- Step 3: Camera Connection -->
+                    <div class="step">
+                        <h2>(3) Connect to a Camera</h2>
+                        <div class="is_row space-between">
+                            <button class="btn" onclick="connectCamera()">Connect</button>
+                            <select id="camera_select" class="dropdown">
+                                <option disabled selected>Select your Camera</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <div class="is_row">
+        <!-- (4) Record a Clue -->
+        <div class="step is_col">
+            <h2>(4) Record a Clue</h2>
+            <button class="btn" onclick="startRecording()">Start Recording</button>
+            <button class="btn" onclick="stopRecording()">Stop Recording</button>
+            <span id="recording_indicator" style="display:none; color:red; font-weight:bold;">● Recording...</span>
+        </div>
+    
+        <!-- (4) Enter a Clue -->
+        <div class="step is_col">
+            <h2>(4) Enter a Clue</h2>
+            <textarea id="clue_input" class="clue-input" placeholder="Enter your clue here"></textarea>
+            <button class="btn" onclick="generateAnswer()">Generate Answer</button>
+        </div>
+    </div>
 
         <!-- Step 3: Object Detection and Clue Input -->
         <div class="detection is_row">
@@ -38,16 +77,32 @@
 
             <!-- Clue Input and Results -->
             <div class="detection-right is_col">
-                <h2>(3) Enter a Clue</h2>
-                <textarea id="clue_input" class="clue-input" placeholder="Enter your clue here"></textarea>
-                <button class="btn" onclick="generateAnswer()">Generate Answer</button>
 
-                <h3>Detected Objects with Coordinates</h3>
+                <h3>Selected Object with Coordinates</h3>
                 <ul id="object_list" class="object-list"></ul>
-
-                <h3>Result</h3>
-                <p id="answer_output" class="result">Answer: </p>
                 <p id="latency_output" class="result">Latency: </p>
+                
+                <!-- "Answer:" turned into a button -->
+                <p class="result">
+                    <button id="answer_output_btn" class="text-button" onclick="playLLMOutput()">
+                        Answer 🔊
+                    </button>
+                    <span id="answer_text"></span>
+                </p>
+
+                <p id="point0"></p>
+                <p id="point1"></p>
+
+                <!-- Step 5: Decision -->
+                <div class="interaction is_col">
+                    <h2>(5) Evaluate</h2>
+                    <div class="decision_box is_row">
+                    <!-- Accept Button -->
+                    <button class="btn" onclick="acceptDecision()">Correct</button>
+                    <!-- Reject Button -->
+                    <button class="btn" onclick="rejectDecision()">Wrong</button>
+                    </div>
+              
             </div>
         </div>
     </div>
