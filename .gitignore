@@ -3,5 +3,10 @@
 /models/
 *job_script.sh
 /YOLO-World/
+/TTS/
 /lerobot/
 /low_cost_robot/
+/uploads/
+/ui/models/
+*.webassets-cache
+*.wav
