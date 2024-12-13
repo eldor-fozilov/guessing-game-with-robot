@@ -1,7 +1,8 @@
 
 let currentResolution = { width: 560, height: 400 };  // 기본 해상도 설정
-let excludedObjects = [];
+let rejectedObjects = [];
 let rejectedObject = null;
+let wrongAnswer = false;
 
 async function searchCameras() {
     try {
@@ -75,7 +76,6 @@ async function connectCamera() {
     }
 }
 
-
 // When push the "Generate Answer Button"
 async function generateAnswer() {
     const clueInput = document.getElementById("clue_input");
@@ -83,15 +83,15 @@ async function generateAnswer() {
     const latencyOutput = document.getElementById("latency_output");
     const objectList = document.getElementById("object_list");
 
+    // reset wrongAnswer to False
+    wrongAnswer = false;
+
     const clue = clueInput.value.trim();
 
     if (!clue) {
         alert("Enter your clue!");
         return;
     }
-
-    rejectedObjects = [];
-    console.log("Rejected objects reset:", rejectedObjects);
 
     document.getElementById("status").innerText = "Generating answers with LLM...";
     
@@ -253,6 +253,13 @@ async function acceptDecision() {
     confettiCanvas.style.zIndex = "1000";
     document.body.appendChild(confettiCanvas);
 
+    // reset wrongAnswer to False
+    wrongAnswer = false;
+    // resert excludedObjects to empty
+    rejectedObjects = [];
+    // reset rejectedObject to null
+    rejectedObject = null;
+
     const ctx = confettiCanvas.getContext("2d");
 
     const particles = [];
@@ -309,6 +316,8 @@ async function rejectDecision() {
     const answerOutput = document.getElementById("answer_output");
     rejectedObject = answerOutput.textContent.split(": ")[1].trim();
     console.log("rejectedObject ", rejectedObject);
+    // set wrongAnswer to True
+    wrongAnswer = true;
 
     if (!rejectedObject) {
         alert("No object to reject. Generate an answer first!");
