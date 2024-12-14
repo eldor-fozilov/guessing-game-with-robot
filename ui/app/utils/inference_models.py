@@ -43,16 +43,16 @@ def generate_llm_response(model, tokenizer, clue, detected_objects, device='cpu'
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
     outputs = pipe(
-        user_prompt,
+        messages,
         max_new_tokens=128,
         pad_token_id=pad_token_id,
         do_sample=False,
     )
 
     # Extract the output text
-    output_text = outputs[0]["generated_text"]
+    output_text = outputs[0]["generated_text"][-1]['content']
 
-#     output_text = "Selected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
+    # output_text = "Selected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
 
     print("LLM Response:", output_text)
 

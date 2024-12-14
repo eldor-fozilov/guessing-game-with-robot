@@ -134,9 +134,6 @@ async function generateAnswer() {
             document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data.x2 + ", " + data.y2 + "}";
         }
 
-        // Automatically play LLM output the first time after generating answer
-        playLLMOutput();
-
         // Contol Robot ----------------------------------------------------------
         const response2 = await fetch("/control_robot", {
             method: "POST",
@@ -378,9 +375,6 @@ async function rejectDecision() {
                 document.getElementById("point0").innerText = "Point 0 {x1, y1} : {" + data2.x1 + ", " + data2.y1 + "}";
                 document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data2.x2 + ", " + data2.y2 + "}";
             }
-    
-            // Automatically play LLM output the first time after generating answer
-            playLLMOutput();
 
             // Contol Robot ----------------------------------------------------------
             const response2 = await fetch("/control_robot", {
