@@ -137,9 +137,6 @@ async function generateAnswer() {
         // Automatically play LLM output the first time after generating answer
         playLLMOutput();
 
-        // wait for 2 seconds before moving the robot
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
         // Contol Robot ----------------------------------------------------------
         const response2 = await fetch("/control_robot", {
             method: "POST",
@@ -384,9 +381,6 @@ async function rejectDecision() {
     
             // Automatically play LLM output the first time after generating answer
             playLLMOutput();
-
-            // wait for 2 seconds before moving the robot
-            await new Promise((resolve) => setTimeout(resolve, 2000));
 
             // Contol Robot ----------------------------------------------------------
             const response2 = await fetch("/control_robot", {

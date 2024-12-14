@@ -283,7 +283,6 @@ def generate_answer():
             vlm_model, vlm_tokenizer, rgb_image, clue, excluded_objects)
 
         if selected_object != "unknown":
-            all_identified_objects = all_identified_objects.strip().split(", ")
 
             boxes, labels, label_texts, scores = yolo_world_detect(
                 runner=yolo_world_model, object_description=selected_object, input_image=rgb_image)

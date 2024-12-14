@@ -42,17 +42,17 @@ def generate_llm_response(model, tokenizer, clue, detected_objects, device='cpu'
 
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
-    # outputs = pipe(
-    #     user_prompt,
-    #     max_new_tokens=128,
-    #     pad_token_id=pad_token_id,
-    #     do_sample=False,
-    # )
+    outputs = pipe(
+        user_prompt,
+        max_new_tokens=128,
+        pad_token_id=pad_token_id,
+        do_sample=False,
+    )
 
-    # # Extract the output text
-    # output_text = outputs[0]["generated_text"]
+    # Extract the output text
+    output_text = outputs[0]["generated_text"]
 
-    output_text = "Selected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
+#     output_text = "Selected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
 
     print("LLM Response:", output_text)
 
@@ -133,10 +133,10 @@ def generate_vlm_response(model, tokenizer, image, clue, excluded_objects, devic
 
     generation_config = dict(max_new_tokens=128, do_sample=False)
 
-    # # Single inference call
-    # response = model.chat(tokenizer, pixel_values, question, generation_config)
+    # Single inference call
+    response = model.chat(tokenizer, pixel_values, question, generation_config)
 
-    response = "All Identified Objects: cup, bottle, table\nSelected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
+    # response = "All Identified Objects: cup, bottle, table\nSelected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
 
     print("VLM Response:", response)
 
