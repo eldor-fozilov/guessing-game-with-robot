@@ -78,29 +78,29 @@
             <!-- Clue Input and Results -->
             <div class="detection-right is_col">
 
-                <h3>Selected Object with Coordinates</h3>
-                <ul id="object_list" class="object-list"></ul>
+                <h3>Detection Result and Selected Object</h3>
+                <p id="answer_output" class="result">Answer: </p>
                 <p id="latency_output" class="result">Latency: </p>
+                <p id="point0"></p>
+                <p id="point1"></p>
                 
                 <!-- "Answer:" turned into a button -->
                 <p class="result">
                     <button id="answer_output_btn" class="text-button" onclick="playLLMOutput()">
-                        Answer 🔊
+                        Full Answer 🔊
                     </button>
                     <span id="answer_text"></span>
                 </p>
 
-                <p id="point0"></p>
-                <p id="point1"></p>
 
                 <!-- Step 5: Decision -->
                 <div class="interaction is_col">
                     <h2>(5) Evaluate</h2>
                     <div class="decision_box is_row">
                     <!-- Accept Button -->
-                    <button class="btn" onclick="acceptDecision()">Correct</button>
+                    <button class="correct_btn" onclick="acceptDecision()">Correct</button>
                     <!-- Reject Button -->
-                    <button class="btn" onclick="rejectDecision()">Wrong</button>
+                    <button class="wrong_btn" onclick="rejectDecision()">Wrong</button>
                     </div>
               
             </div>

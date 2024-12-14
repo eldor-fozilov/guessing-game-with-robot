@@ -17,131 +17,167 @@ import datetime
 from transformers import pipeline
 from flask import Blueprint, render_template, request, jsonify, Response
 from app.utils.process_image import load_image
+from torchvision.transforms.functional import to_tensor
 
 
 def generate_llm_response(model, tokenizer, clue, detected_objects, device='cpu'):
 
     user_prompt = f"""You are an assistant whose task is to identify the correct object from this list {detected_objects} that aligns best with the following clue: '{clue}', which can be given in Korean or English.
-        Take a moment to think about each object's properties, considering how the clue relates to them, directly or indirectly.
-        Provide only the name of the correct object as your answer. No additional explanations.
-        The answer is: """
+    Take a moment to think about each object's properties, considering how the clue relates to them, directly or indirectly.
+    Provide your response in the following format:
+
+    Selected Object: <name of the correct object>
+    Explanation: <brief explanation of how the object's properties align with the clue>
+
+    The response should be structured exactly like this, with "Selected Object:" followed by the object's name, and "Explanation:" followed by a brief explanation.
+
+    Response:"""
 
     pad_token_id = model.config.pad_token_id
 
     messages = [{"role": "user", "content": user_prompt}]
-    print("LLM Input (for object selection):", messages)
+    print("LLM Input:", messages)
 
     start = time.time()
 
-    pipe = pipeline("text-generation", model=model,
-                    tokenizer=tokenizer, device=device)
+    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
-    outputs = pipe(
-        messages,
-        max_new_tokens=64,
-        pad_token_id=pad_token_id,
-        do_sample=False,
-    )
+    # outputs = pipe(
+    #     user_prompt,
+    #     max_new_tokens=128,
+    #     pad_token_id=pad_token_id,
+    #     do_sample=False,
+    # )
 
-    selected_object = outputs[0]["generated_text"][-1]['content']
-    print("LLM Response (for object selection):", selected_object)
+    # # Extract the output text
+    # output_text = outputs[0]["generated_text"]
 
-    selected_object = selected_object.lower().strip()
+    output_text = "Selected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
 
-    if selected_object in detected_objects:
-        sel_obj_idx = detected_objects.index(selected_object)
+    print("LLM Response:", output_text)
+
+    # Parse the output to get the selected object and explanation
+    selected_object = None
+    explanation = None
+
+    for line in output_text.split("\n"):
+        if line.startswith("Selected Object:"):
+            selected_object = line.replace(
+                "Selected Object:", "").strip().lower()
+        elif line.startswith("Explanation:"):
+            explanation = line.replace("Explanation:", "").strip()
+
+    if selected_object and selected_object in [obj.lower() for obj in detected_objects]:
+        sel_obj_idx = [obj.lower()
+                       for obj in detected_objects].index(selected_object)
     else:
-        print("The exact object name is not returned. So we will apply heuristics to find the closest match.")
-        # find the closest match
+        print("The exact object name is not returned. Applying heuristics to find the closest match.")
+        # Find the closest match
         sel_obj_idx = 0
         max_score = 0
         for idx, obj in enumerate(detected_objects):
-            score = 0
-            for word in selected_object.split():
-                word = word.lower()
-                if word in obj:
-                    score += 1
+            score = sum(1 for word in selected_object.split()
+                        if word in obj.lower())
             if score > max_score:
                 max_score = score
                 sel_obj_idx = idx
 
-        print("Selected Object: ", detected_objects[sel_obj_idx])
+        if max_score == 0:
+            print("Could not find a close match.")
+            sel_obj_idx = -1
 
-    # run one more inference now to ask model to explain why it chose this object
-    user_prompt = f"""You are an assistant whose task is to explain why the object '{detected_objects[sel_obj_idx]}' is the best match for the clue '{clue}' among the objects in the list {detected_objects}.
-        Provide a very brief explanation (one or two sentences) of how the object's properties align with the clue, directly or indirectly.
-        Response: """
-
-    messages = [{"role": "user", "content": user_prompt}]
-    print("LLM Input (for explanation):", messages)
-
-    outputs = pipe(
-        messages,
-        max_new_tokens=64,
-        pad_token_id=pad_token_id,
-        do_sample=False,
-    )
+    if sel_obj_idx == -1:
+        selected_object = 'unknown'
+        explanation = "No explanation provided"
+    else:
+        selected_object = detected_objects[sel_obj_idx]
 
     end = time.time()
-
     latency = str(datetime.timedelta(seconds=(end - start)))
 
-    explanation = outputs[0]["generated_text"][-1]['content']
-    print("LLM Response (for explanation):", explanation)
+    latency = latency.split(".")[0]
+    latency = latency + " seconds"
 
-    return latency, detected_objects[sel_obj_idx], explanation
+    if not explanation:
+        explanation = "No explanation provided."
+
+    print("Selected Object:", detected_objects[sel_obj_idx])
+    print("Explanation:", explanation)
+
+    return latency, selected_object, explanation
 
 
 def generate_vlm_response(model, tokenizer, image, clue, excluded_objects, device='cpu'):
+    user_prompt = f'''You are an assistant whose task is to analyze the given image and the following clue: '{clue}', which can be given in Korean or English.
+    
+    1. Identify and list all the objects present in the image.
+    2. From the list of identified objects, select the one that best aligns with the clue, while ignoring these excluded objects if present: {excluded_objects}.
+    3. Provide a brief explanation of why the selected object matches the clue.
 
-    user_prompt = f'''You are an assistant whose task is to identify the correct object from the given image that aligns best with the following clue: '{clue}'
-    First think about each object's properties in the image, considering how the clue relates to them, directly or indirectly. Then, provide only the name of the correct object as your answer.
-    Avoid considering the objects in this list {excluded_objects}, if there are any.
-    No additional explanations.
-    The answer is: '''
+    Format your response as follows:
+
+    All Identified Objects: <comma-separated list of objects>
+    Selected Object: <name of the correct object>
+    Explanation: <brief explanation>
+
+    Response:'''
+
+    # Prepare the input question with the image token
+    question = f'<image>\n{user_prompt}'
+    print("VLM Input:", question)
 
     start = time.time()
 
-    pixel_values = load_image(
-        image, max_num=1).to(torch.bfloat16).to(device)
-    generation_config = dict(max_new_tokens=64, do_sample=False)
+    # Load and preprocess the image
+    pixel_values = load_image(image, max_num=1).to(torch.bfloat16).to(device)
 
-    question = f'<image>\n{user_prompt}'
+    generation_config = dict(max_new_tokens=128, do_sample=False)
 
-    print("VLM Input (for object selection):", question)
+    # # Single inference call
+    # response = model.chat(tokenizer, pixel_values, question, generation_config)
 
-    selected_object = model.chat(
-        tokenizer, pixel_values, question, generation_config)
+    response = "All Identified Objects: cup, bottle, table\nSelected Object: cup\nExplanation: The cup is the only object that can hold liquid."  # temporary
 
-    print("VLM Response (for object selection):", selected_object)
+    print("VLM Response:", response)
 
-    selected_object = selected_object.lower().strip()
+    # Parse the response to extract identified objects, selected object, and explanation
+    all_identified_objects = []
+    selected_object = None
+    explanation = None
 
-    if selected_object[0] in ["[", "(", "{"]:
-        selected_object = selected_object[1:]
-    if selected_object[-1] in ["]", ")", "}"]:
-        selected_object = selected_object[:-1]
+    for line in response.split("\n"):
+        if line.startswith("All Identified Objects:"):
+            all_identified_objects = [obj.strip().lower() for obj in line.replace(
+                "All Identified Objects:", "").split(",")]
+        elif line.startswith("Selected Object:"):
+            selected_object = line.replace(
+                "Selected Object:", "").strip().lower()
+        elif line.startswith("Explanation:"):
+            explanation = line.replace("Explanation:", "").strip()
 
-    # run one more inference now to ask model to explain why it chose this object
+    # Post-process the selected object
+    if selected_object:
+        selected_object = selected_object.strip("[]{}()")
 
-    user_prompt = f'''You are an assistant whose task is to explain why the object '{selected_object}' is the best match for the clue '{clue}' among the objects in the image.
-    First, consisely list out all the objects in the image, and then provide a very brief explanation (one or two sentences) of how the '{selected_object}' object's properties align with the clue, directly or indirectly.
-    Response: '''
+    # Fallback if selected object is not identified
+    if not selected_object or selected_object in excluded_objects:
+        print("The exact object name is not returned or is in the exclusion list. Applying heuristics to find the closest match.")
+        selected_object = "unknown"
 
-    question = f'<image>\n{user_prompt}'
-
-    print("VLM Input (for explanation):", question)
-
-    explanation = model.chat(tokenizer, pixel_values,
-                             question, generation_config)
-
-    print("VLM Response (for explanation):", explanation)
+    if not explanation:
+        explanation = "No explanation provided."
 
     end = time.time()
-
     latency = str(datetime.timedelta(seconds=(end - start)))
 
-    return latency, selected_object, explanation
+    latency = latency.split(".")[0]
+    latency = latency + " seconds"
+
+    print("All Identified Objects:", all_identified_objects)
+    print("Selected Object:", selected_object)
+    print("Explanation:", explanation)
+
+    return latency, all_identified_objects, selected_object, explanation
 
 
 def yolo_world_detect(
@@ -152,9 +188,10 @@ def yolo_world_detect(
         nms_thr=0.5,
         object_description="",
 ):
+
     texts = [[t.strip()] for t in object_description.split(",")] + [[" "]]
-    data_info = runner.pipeline(dict(img_id=0, img_path=input_image,
-                                     texts=texts))
+    data_info = dict(img=input_image, img_id=0, texts=texts)
+    data_info = runner.pipeline(data_info)
 
     data_batch = dict(
         inputs=data_info["inputs"].unsqueeze(0),

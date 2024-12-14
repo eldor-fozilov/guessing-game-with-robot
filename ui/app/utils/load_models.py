@@ -7,7 +7,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
 
 
-def load_yolo_model(model_name="models/yolo11n.pt", device='cpu'):
+def load_yolo_model(model_name="models/yolo11s.pt", device='cpu'):
     yolo_model = YOLO(model_name)
     yolo_model.fuse()
     yolo_model.to(device)
@@ -42,8 +42,8 @@ def load_vlm_model(model_name="OpenGVLab/InternVL2_5-2B", load_in_8bit=False, de
     return vlm_model, vlm_tokenizer
 
 
-def load_yolo_world_model(model_path="./YOLO-World/pretrained_weights/yolo_world_v2_l_obj365v1_goldg_pretrain_1280ft-9babe3f6.pth",
-                          config_path="./YOLO-World/configs/pretrain/yolo_world_v2_l_vlpan_bn_2e-3_100e_4x8gpus_obj365v1_goldg_train_1280ft_lvis_minival.py",
+def load_yolo_world_model(model_path="./YOLO-World/pretrained_weights/yolo_world_v2_s_obj365v1_goldg_pretrain-55b943ea.pth",
+                          config_path="./YOLO-World/configs/pretrain/yolo_world_v2_s_vlpan_bn_2e-3_100e_4x8gpus_obj365v1_goldg_train_lvis_minival.py",
                           device="cpu"):
 
     cfg = Config.fromfile(
@@ -55,8 +55,8 @@ def load_yolo_world_model(model_path="./YOLO-World/pretrained_weights/yolo_world
     runner.call_hook("before_run")
     runner.load_or_resume()
     pipeline = cfg.test_dataloader.dataset.pipeline
+    pipeline[0].type = 'mmdet.LoadImageFromNDArray'
     runner.pipeline = Compose(pipeline)
-
     # run model evaluation
     runner.model.to(device).eval()
 

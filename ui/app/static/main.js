@@ -86,6 +86,13 @@ async function generateAnswer() {
     // reset wrongAnswer to False
     wrongAnswer = false;
 
+    // send the wrongAnswer to the server
+    await fetch("/wrong_answer_status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ wrongAnswer }),
+        });
+
     const clue = clueInput.value.trim();
 
     if (!clue) {
@@ -93,7 +100,7 @@ async function generateAnswer() {
         return;
     }
 
-    document.getElementById("status").innerText = "Generating answers with LLM...";
+    document.getElementById("status").innerText = "Generating answers ...";
     
     try {
         const response = await fetch("/generate_answer", {
@@ -123,9 +130,15 @@ async function generateAnswer() {
             objectList.appendChild(li);
         } else {
             // 매칭된 객체가 있을 때
-            document.getElementById("point0").innerText = "Point 0 : {" + data.x1 + ", " + data.y1 + "}";
-            document.getElementById("point1").innerText = "Point 1 : {" + data.x2 + ", " + data.y2 + "}";
+            document.getElementById("point0").innerText = "Point 0 {x1, y1} : {" + data.x1 + ", " + data.y1 + "}";
+            document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data.x2 + ", " + data.y2 + "}";
         }
+
+        // Automatically play LLM output the first time after generating answer
+        playLLMOutput();
+
+        // wait for 2 seconds before moving the robot
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Contol Robot ----------------------------------------------------------
         const response2 = await fetch("/control_robot", {
@@ -140,9 +153,6 @@ async function generateAnswer() {
             document.getElementById("status").innerText = `Error: ${data2.error}`;
         }
         // ------------------------------------------------------------------------
-        
-        // Automatically play LLM output the first time after generating answer
-        playLLMOutput();
 
     } catch (err) {
         console.error("Error generating answer:", err);
@@ -221,13 +231,13 @@ async function stopRecording() {
 }
 
 async function playLLMOutput() {
-    document.getElementById("status").innerText = "Playing LLM output as speech...";
+    document.getElementById("status").innerText = "Playing output as speech...";
     try {
         const response = await fetch("/speak_llm_output", {
             method: "POST"
         });
         if (response.ok) {
-            document.getElementById("status").innerText = "Playing speech...";
+            document.getElementById("status").innerText = "Speech played successfully!";
         } else {
             const errorData = await response.json();
             document.getElementById("status").innerText = "Error playing speech: " + errorData.error;
@@ -237,7 +247,6 @@ async function playLLMOutput() {
         document.getElementById("status").innerText = "Error playing speech!";
     }
 }
-
 
 async function acceptDecision() {
     document.getElementById("status").innerText = "Decision accepted! 🎉";
@@ -259,6 +268,13 @@ async function acceptDecision() {
     rejectedObjects = [];
     // reset rejectedObject to null
     rejectedObject = null;
+
+    // send the wrongAnswer to the server
+    await fetch("/wrong_answer_status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ wrongAnswer }),
+        });
 
     const ctx = confettiCanvas.getContext("2d");
 
@@ -308,16 +324,19 @@ async function acceptDecision() {
     }, 5000);
 }
 
-
-
-
-
 async function rejectDecision() {
     const answerOutput = document.getElementById("answer_output");
     rejectedObject = answerOutput.textContent.split(": ")[1].trim();
     console.log("rejectedObject ", rejectedObject);
     // set wrongAnswer to True
     wrongAnswer = true;
+
+    // make a new function to send the wrongAnswer to the server
+    await fetch("/wrong_answer_status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ wrongAnswer }),
+        });    
 
     if (!rejectedObject) {
         alert("No object to reject. Generate an answer first!");
@@ -332,7 +351,7 @@ async function rejectDecision() {
     console.log("Rejected Objects Array:", rejectedObjects);
 
     try {
-        document.getElementById("status").innerText = "Regenerating answer with LLM...";
+        document.getElementById("status").innerText = "Regenerating answer ...";
         
         const clue = document.getElementById("clue_input").value.trim();
         if (!clue) {
@@ -359,10 +378,16 @@ async function rejectDecision() {
                 objectList.appendChild(li);
             } else {
                 // 매칭된 객체가 있을 때
-                document.getElementById("point0").innerText = "Point 0 : {" + data2.x1 + ", " + data2.y1 + "}";
-                document.getElementById("point1").innerText = "Point 1 : {" + data2.x2 + ", " + data2.y2 + "}";
+                document.getElementById("point0").innerText = "Point 0 {x1, y1} : {" + data2.x1 + ", " + data2.y1 + "}";
+                document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data2.x2 + ", " + data2.y2 + "}";
             }
     
+            // Automatically play LLM output the first time after generating answer
+            playLLMOutput();
+
+            // wait for 2 seconds before moving the robot
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+
             // Contol Robot ----------------------------------------------------------
             const response2 = await fetch("/control_robot", {
                 method: "POST",
