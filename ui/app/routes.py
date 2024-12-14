@@ -11,6 +11,7 @@ from pvrecorder import PvRecorder
 # import numpy as np
 # from app.robot_control.guesser import GuessingBot
 # from app.utils.inference_models import yolo_world_detect
+from app.utils.load_models import load_yolo_model
 # import mujoco
 import requests
 import base64
@@ -22,7 +23,9 @@ if torch.cuda.is_available():           device = "cuda"
 elif torch.backends.mps.is_available(): device = "mps"
 else:                                   device = "cpu"
 
-SERVER_URL = "http://10.20.12.178:5000"
+
+
+SERVER_URL = "http://10.20.12.178:6000"
 
 # # =================================================================
 # # ROBOT CONTROL (TEST)
@@ -77,6 +80,8 @@ vlm_tokenizer = None
 yolo_model = None
 yolo_world_model = None
 # =================================================================
+
+yolo_model = load_yolo_model(device="cpu")
 
 
 @main.route('/')
@@ -147,6 +152,8 @@ def camera_stream():
         detected_objects = []
 
         # if current_pipeline == "YOLO and LLM":
+        #     yolo_model = load_yolo_model(device="cpu")
+
         #     # YOLO 객체 감지
         #     results = yolo_model(frame, verbose=False)[0]
 
@@ -179,6 +186,8 @@ def camera_stream():
         #             "coords": [x1, y1, x2, y2]
         #         })
 
+
+        # YOLO 객체 감지
         results = yolo_model(frame, verbose=False)[0]
 
         # 감지된 객체의 이름과 좌표 저장
@@ -208,7 +217,6 @@ def camera_stream():
         # 프레임 반환
         _, encoded_frame = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + encoded_frame.tobytes() + b'\r\n')
-
 
 @main.route('/video_feed')
 def video_feed():
@@ -252,16 +260,17 @@ def generate_answer():
         last_all_identified_objects = response_data.get("last_all_identified_objects")
         last_select_object_coords = response_data.get("last_select_object_coords")
 
+        print("response_data:", response_data)
         return jsonify({
-            "answer": response_data.selected_object,
-            "explanation": response_data.explanation,
-            "all_identified_objects": response_data.all_identified_objects,
-            "latency": response_data.latency,
+            "answer": response_data['answer'],
+            "explanation": response_data['explanation'],
+            "all_identified_objects": response_data['all_identified_objects'],
+            "latency": response_data['latency'],
             "positions": "yes",
-            "x1": response_data.x1,
-            "y1": response_data.y1,
-            "x2": response_data.x2,
-            "y2": response_data.y2,
+            "x1": response_data['x1'],
+            "y1": response_data['y1'],
+            "x2": response_data['x2'],
+            "y2": response_data['y2'],
         })
     else:
         raise RuntimeError(f"Server error: {response.status_code}, {response.text}")
@@ -388,11 +397,14 @@ def speak_llm_output():
     if response.status_code == 200:
         audio_base64 = response.json().get("audio")
         if audio_base64:
-            os.system(f"aplay tmp.wav")
+            with open("tmp.wav", "wb") as f:
+                f.write(base64.b64decode(audio_base64))
+            os.system("afplay tmp.wav")
         else:
             print("No audio data received.")
     else:
         print("Error:", response.json()["error"])
+
     
 
     return jsonify({"status": "Playing LLM speech"})
