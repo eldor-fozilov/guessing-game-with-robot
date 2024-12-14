@@ -1,5 +1,3 @@
-from urllib import response
-from charset_normalizer import detect
 from flask import Blueprint, g, render_template, request, jsonify, Response
 from .utils.camera import Camera, list_cameras
 import cv2
@@ -324,7 +322,7 @@ def generate_answer():
 @main.route('/select_solution', methods=['POST'])
 def select_solution():
     global current_pipeline, yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer
-    data = request.get_json()
+    data = request.json
     solution = data.get('solution')
     if not solution:
         return jsonify({"error": "No solution provided"}), 400
@@ -426,7 +424,10 @@ def speak_llm_output():
 @ main.route('/wrong_answer_status', methods=['POST'])
 def wrong_answer_status():
     global wrong_answer
-    wrong_answer = response.json().get("wrongAnswer", False)
+    wrong_answer = request.json.get("wrongAnswer", False)
+
+    print("Wrong answer flag set to:", wrong_answer)
+
     return jsonify({"status": "wrong answer flag set"})
 
 
