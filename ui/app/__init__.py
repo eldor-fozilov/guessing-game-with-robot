@@ -9,9 +9,9 @@ def create_app():
     assets = Environment(app)
     app.register_blueprint(main)
 
-    # SCSS 파일 설정
+    # SCSS settings
     scss = Bundle('scss/styles.scss', filters='libsass', output='css/styles.css')
     assets.register('scss_all', scss)
-    scss.build()  # 서버 시작 시 SCSS를 컴파일
+    scss.build()
 
     return app

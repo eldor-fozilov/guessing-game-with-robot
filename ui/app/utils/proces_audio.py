@@ -33,4 +33,4 @@ def speak(model, text, speaker="Viktor Menelaos", output_path='tmp.wav'):
                       split_sentences=False
                       )
 
-    os.system(f"aplay {output_path}")
+    

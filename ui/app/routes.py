@@ -1,76 +1,63 @@
-from flask import Blueprint, g, render_template, request, jsonify, Response
+from flask import Blueprint, render_template, request, jsonify, Response
 from .utils.camera import Camera, list_cameras
 import cv2
 import threading
 import torch
 import time
-import whisper
-from queue import Queue
-from app.utils.proces_audio import understand, speak
+
 import struct
 import wave
 from pvrecorder import PvRecorder
-import numpy as np
-from app.robot_control.guesser import GuessingBot
-from app.utils.load_models import load_yolo_model, load_llm_model, load_vlm_model, load_yolo_world_model, load_yolo_model
-from app.utils.inference_models import generate_llm_response, generate_vlm_response, yolo_world_detect
-from app.utils.process_object import process_detected_objects
-from TTS.api import TTS
-import mujoco
-from PIL import Image
+# import numpy as np
+# from app.robot_control.guesser import GuessingBot
+# from app.utils.inference_models import yolo_world_detect
+# import mujoco
+import requests
+import base64
+import os
 
 main = Blueprint('main', __name__)
 
-if torch.cuda.is_available():
-    device = "cuda"
-else:
-    device = "cpu"
+if torch.cuda.is_available():           device = "cuda"
+elif torch.backends.mps.is_available(): device = "mps"
+else:                                   device = "cpu"
 
-# Load Whisper model for STT
-stt_model = whisper.load_model("base")
-print("STT model loaded.")
+SERVER_URL = "http://10.20.12.178:5000"
 
-# Load TTs model for TTS
-tts_model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
+# # =================================================================
+# # ROBOT CONTROL (TEST)
+# use_robot = False
 
-if device == 'cpu':
-    tts_model = TTS(tts_model_name, gpu=False)
-else:
-    tts_model = TTS(tts_model_name, gpu=True)
+# if use_robot:
+#     end_effector = 'joint6'
 
-print("TTS model loaded.")
+#     np.set_printoptions(precision=6, suppress=True)
 
-use_robot = False
+#     # Define model and data in mujoco
+#     urdf_path = './app/robot_control/low_cost_robot/scene.xml'
+#     device_name = '/dev/ttyACM0'
 
-if use_robot:
+#     robot = mujoco.MjModel.from_xml_path(urdf_path)
+#     data = mujoco.MjData(robot)
 
-    end_effector = 'joint6'
+#     # Make GueesingBot
+#     guesser = GuessingBot(
+#         model=robot,
+#         data=data,
+#         device_name=device_name,
+#         end_effector=end_effector
+#     )
 
-    np.set_printoptions(precision=6, suppress=True)
-
-    # Define model and data in mujoco
-    urdf_path = './app/robot_control/low_cost_robot/scene.xml'
-    device_name = '/dev/ttyACM0'
-
-    robot = mujoco.MjModel.from_xml_path(urdf_path)
-    data = mujoco.MjData(robot)
-
-    # Make GueesingBot
-    guesser = GuessingBot(
-        model=robot,
-        data=data,
-        device_name=device_name,
-        end_effector=end_effector
-    )
-
-    # Move real robot to home position
-    guesser.move_to_home()
+#     # Move real robot to home position
+#     guesser.move_to_home()
+# # =================================================================
 
 
+# =================================================================
 # variables for tracking
 camera_instance = None
 camera_search_results = []
-# buffer = Queue(maxsize=60)
+
 last_llm_answer = None
 last_all_identified_objects = None
 last_llm_explanation = None
@@ -89,6 +76,7 @@ vlm_model = None
 vlm_tokenizer = None
 yolo_model = None
 yolo_world_model = None
+# =================================================================
 
 
 @main.route('/')
@@ -158,49 +146,58 @@ def camera_stream():
 
         detected_objects = []
 
-        if current_pipeline == "YOLO and LLM":
-            # YOLO 객체 감지
-            results = yolo_model(frame, verbose=False)[0]
+        # if current_pipeline == "YOLO and LLM":
+        #     # YOLO 객체 감지
+        #     results = yolo_model(frame, verbose=False)[0]
 
-            # 감지된 객체의 이름과 좌표 저장
-            for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
-                # 바운딩 박스 좌표 및 클래스 이름 추출
-                x1, y1, x2, y2 = map(int, box.tolist())
-                obj_name = results.names[int(cls.item())]
+        #     # 감지된 객체의 이름과 좌표 저장
+        #     for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
+        #         # 바운딩 박스 좌표 및 클래스 이름 추출
+        #         x1, y1, x2, y2 = map(int, box.tolist())
+        #         obj_name = results.names[int(cls.item())]
 
-                # 객체 정보를 딕셔너리로 저장
-                detected_objects.append({
-                    "name": obj_name,
-                    "coords": [x1, y1, x2, y2]
-                })
+        #         # 객체 정보를 딕셔너리로 저장
+        #         detected_objects.append({
+        #             "name": obj_name,
+        #             "coords": [x1, y1, x2, y2]
+        #         })
 
-            if not wrong_answer and last_llm_answer:
-                # only show the selected object
-                detected_objects = [
-                    obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
+        #     if not wrong_answer and last_llm_answer:
+        #         # only show the selected object
+        #         detected_objects = [
+        #             obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
 
-        elif current_pipeline == "VLM and YOLO World" and last_llm_answer and not wrong_answer:
-            boxes, labels, label_texts, scores = yolo_world_detect(runner=yolo_world_model,
-                                                                   object_description=last_llm_answer, input_image=frame)
+        # elif current_pipeline == "VLM and YOLO World" and last_llm_answer and not wrong_answer:
+        #     boxes, labels, label_texts, scores = yolo_world_detect(runner=yolo_world_model,
+        #                                                            object_description=last_llm_answer, input_image=frame)
 
-            detected_objects = []
-            for box, label, label_text, score in zip(boxes, labels, label_texts, scores):
-                x1, y1, x2, y2 = map(int, box)
-                detected_objects.append({
-                    "name": label_text,
-                    "coords": [x1, y1, x2, y2]
-                })
+        #     detected_objects = []
+        #     for box, label, label_text, score in zip(boxes, labels, label_texts, scores):
+        #         x1, y1, x2, y2 = map(int, box)
+        #         detected_objects.append({
+        #             "name": label_text,
+        #             "coords": [x1, y1, x2, y2]
+        #         })
 
-            # detected_objects = [{
-            #     "name": last_llm_answer,
-            #     "coords": last_select_object_coords
-            # }]
+        results = yolo_model(frame, verbose=False)[0]
 
-        # 버퍼에 데이터 추가 (입력 전후 2초 동안 유지)
-        # if buffer.full():
-        #     buffer.get()  # 오래된 데이터 제거
-        # buffer.put(detected_objects)
+        # 감지된 객체의 이름과 좌표 저장
+        for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
+            # 바운딩 박스 좌표 및 클래스 이름 추출
+            x1, y1, x2, y2 = map(int, box.tolist())
+            obj_name = results.names[int(cls.item())]
 
+            # 객체 정보를 딕셔너리로 저장
+            detected_objects.append({
+                "name": obj_name,
+                "coords": [x1, y1, x2, y2]
+            })
+
+        if not wrong_answer and last_llm_answer:
+            # only show the selected object
+            detected_objects = [
+                obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
+                
         # YOLO 감지 결과를 프레임에 표시
         for obj in detected_objects:
             x1, y1, x2, y2 = obj["coords"]
@@ -217,11 +214,13 @@ def camera_stream():
 def video_feed():
     return Response(camera_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-
+# =================================================================
+# LLM & VLM
 @main.route("/generate_answer", methods=["POST"])
 def generate_answer():
-    global camera_instance, last_llm_answer, last_llm_explanation, last_transcription, current_pipeline, last_select_object_coords, last_all_identified_objects  # buffer
-    global yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer
+    global camera_instance, current_pipeline, last_transcription
+    global last_llm_answer, last_llm_explanation, last_select_object_coords, last_all_identified_objects
+
     data = request.json
     clue = data.get("clue", "").strip()
     excluded_objects = data.get("rejectedObjects", [])
@@ -231,97 +230,49 @@ def generate_answer():
             clue = last_transcription.strip()
         else:
             return jsonify({"error": "No clue provided. Either type text or record audio first."}), 400
-
-    matched_position = None
+        
     ret, frame = camera_instance.camera.read()
 
     if not ret:
         return jsonify({"error": "Failed to capture frame."}), 500
+    
+    _, buffer = cv2.imencode(".jpg", frame)
+    frame_encoded = base64.b64encode(buffer).decode("utf-8")
 
-    if current_pipeline == "YOLO and LLM":
-
-        # detected_objects = list(buffer.queue)
-
-        detected_objects = []
-        results = yolo_model(frame, verbose=False)[0]
-
-        for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
-            x1, y1, x2, y2 = map(int, box.tolist())
-            obj_name = results.names[int(cls.item())]
-
-            detected_objects.append({
-                "name": obj_name,
-                "coords": [x1, y1, x2, y2]
-            })
-
-        filtered_objects, unique_objects = process_detected_objects(
-            excluded_objects, detected_objects)
-
-        # print("Detected objects:", detected_objects)
-        # print("Excluded objects:", excluded_objects)
-        # print("Filtered objects:", filtered_objects)
-        # print("Unique objects:", unique_objects)
-
-        latency, selected_object, explanation = generate_llm_response(
-            llm_model, llm_tokenizer, clue, unique_objects)
-
-        if selected_object != "unknown":
-            all_identified_objects = unique_objects
-
-            for obj_data in filtered_objects:
-                if isinstance(obj_data, dict) and obj_data["name"].lower() == selected_object.lower():
-                    matched_position = obj_data["coords"]
-                    break
-
-    elif current_pipeline == "VLM and YOLO World":
-
-        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        latency, all_identified_objects, selected_object, explanation = generate_vlm_response(
-            vlm_model, vlm_tokenizer, rgb_image, clue, excluded_objects)
-
-        if selected_object != "unknown":
-
-            boxes, labels, label_texts, scores = yolo_world_detect(
-                runner=yolo_world_model, object_description=selected_object, input_image=rgb_image)
-
-            box = boxes[0]
-            x1, y1, x2, y2 = map(int, box)
-            matched_position = [x1, y1, x2, y2]
-
-    else:
-        return jsonify({"error": "No valid solution pipeline selected."}), 400
-
-    last_llm_answer = selected_object
-    last_llm_explanation = explanation
-    last_all_identified_objects = all_identified_objects
-
-    if not matched_position:
-        return jsonify({
-            "answer": "No matching object found.",
-            "latency": latency,
-            "positions": None
-        })
-
-    x1, y1, x2, y2 = matched_position
-    last_select_object_coords = matched_position
-
-    return jsonify({
-        "answer": selected_object,
-        "explanation": explanation,
-        "all_identified_objects": all_identified_objects,
-        "latency": latency,
-        "positions": "yes",
-        "x1": x1,
-        "y1": y1,
-        "x2": x2,
-        "y2": y2
+    response = requests.post(f"{SERVER_URL}/generate_answer_server", json={
+        "frame": frame_encoded,
+        "clue": clue,
+        "excluded_objects": excluded_objects
     })
+
+    if response.status_code == 200:
+        response_data = response.json()
+        last_llm_answer = response_data.get("last_llm_answer")
+        last_llm_explanation = response_data.get("last_llm_explanation")
+        last_all_identified_objects = response_data.get("last_all_identified_objects")
+        last_select_object_coords = response_data.get("last_select_object_coords")
+
+        return jsonify({
+            "answer": response_data.selected_object,
+            "explanation": response_data.explanation,
+            "all_identified_objects": response_data.all_identified_objects,
+            "latency": response_data.latency,
+            "positions": "yes",
+            "x1": response_data.x1,
+            "y1": response_data.y1,
+            "x2": response_data.x2,
+            "y2": response_data.y2,
+        })
+    else:
+        raise RuntimeError(f"Server error: {response.status_code}, {response.text}")
+    
 
 
 @main.route('/select_solution', methods=['POST'])
 def select_solution():
-    global current_pipeline, yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer
+    global current_pipeline
+    global yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer
+
     data = request.json
     solution = data.get('solution')
     if not solution:
@@ -330,26 +281,30 @@ def select_solution():
     # Set the global variable
     current_pipeline = solution
 
-    if solution == "YOLO and LLM":
-        # Load the YOLO model
-        yolo_model = load_yolo_model(device="cpu")
-        print("YOLO model loaded.")
-        # Load the LLM model
-        llm_model, llm_tokenizer = load_llm_model(device=device)
-        print("LLM model loaded.")
-    elif solution == "VLM and YOLO World":
-        # Load the VLM model
-        vlm_model, vlm_tokenizer = load_vlm_model(device=device)
-        print("VLM model loaded.")
-        # Load the YOLO World model
-        yolo_world_model = load_yolo_world_model(device="cpu")
-        print("YOLO World model loaded.")
+    response = requests.post(f"{SERVER_URL}/select_solution_server", json={
+        "current_pipeline": current_pipeline,
+    })
+
+    if response.status_code == 200:
+        return jsonify({"status": "solution set", "current_solution": current_pipeline})
     else:
-        return jsonify({"error": "Invalid solution"}), 400
-
-    return jsonify({"status": "solution set", "current_solution": current_pipeline})
+        raise RuntimeError(f"Server error: {response.status_code}, {response.text}")
 
 
+@ main.route('/wrong_answer_status', methods=['POST'])
+def wrong_answer_status():
+    global wrong_answer
+    wrong_answer = request.json.get("wrongAnswer", False)
+
+    print("Wrong answer flag set to:", wrong_answer)
+
+    return jsonify({"status": "wrong answer flag set"})
+# =================================================================
+
+
+
+# =================================================================
+# TTS & STT
 def listen(max_duration=60, device_index=-1, output_path='tmp.wav'):
     global stop_recording_flag
     stop_recording_flag = False
@@ -396,41 +351,57 @@ def start_listen():
 
 @ main.route('/stop_listen', methods=['POST'])
 def stop_listen():
-    global stop_recording_flag, recording_thread, whisper_model, device, stt_model
+    global stop_recording_flag, recording_thread, whisper_model, device
     stop_recording_flag = True
+
     if recording_thread:
         recording_thread.join()
         recording_thread = None
 
-    transcription = understand(
-        stt_model, device, filename="recorded_audio.wav")
+    with open("recorded_audio.wav", "rb") as f:
+        audio_data = f.read()
+        audio_base64 = base64.b64encode(audio_data).decode("utf-8")
+        
+    response = requests.post(f"{SERVER_URL}/stop_listen_server", json={
+        "audio": audio_base64,
+    })
 
-    return jsonify({"status": "recording stopped", "transcription": transcription})
+    if response.status_code == 200:
+        return jsonify({"status": "recording stopped", "transcription": response.json()["transcription"]})
+    else:
+        print("Error:", response.json()["error"])
 
 
 @ main.route('/speak_llm_output', methods=['POST'])
 def speak_llm_output():
-    global last_llm_answer, last_llm_explanation, last_all_identified_objects, tts_model
+    global last_llm_answer, last_llm_explanation, last_all_identified_objects
     if not last_llm_answer:
         return jsonify({"error": "No LLM answer to speak."}), 400
 
-    # Convert LLM answer to speech and play it
     full_response = f"Identified objects are {', '.join(last_all_identified_objects)}. The selected object is {last_llm_answer}. {last_llm_explanation}"
-    speak(tts_model, full_response)
+
+    response = requests.post(f"{SERVER_URL}/speak_llm_output_server", json={
+            "full_response": full_response,
+        }
+    )
+    
+    if response.status_code == 200:
+        audio_base64 = response.json().get("audio")
+        if audio_base64:
+            os.system(f"aplay tmp.wav")
+        else:
+            print("No audio data received.")
+    else:
+        print("Error:", response.json()["error"])
+    
 
     return jsonify({"status": "Playing LLM speech"})
+# =================================================================
 
 
-@ main.route('/wrong_answer_status', methods=['POST'])
-def wrong_answer_status():
-    global wrong_answer
-    wrong_answer = request.json.get("wrongAnswer", False)
 
-    print("Wrong answer flag set to:", wrong_answer)
-
-    return jsonify({"status": "wrong answer flag set"})
-
-
+# =================================================================
+# ROBOT
 @ main.route("/control_robot", methods=["POST"])
 def control_robot():
     global last_select_object_coords
@@ -451,3 +422,4 @@ def control_robot():
     guesser.move_to_home()
 
     return jsonify({"status": "success"})
+# =================================================================

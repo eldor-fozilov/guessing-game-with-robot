@@ -7,7 +7,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
 
 
-def load_yolo_model(model_name="models/yolo11s.pt", device='cpu'):
+def load_yolo_model(model_name="models/yolo11x.pt", device='cpu'):
     yolo_model = YOLO(model_name)
     yolo_model.fuse()
     yolo_model.to(device)
