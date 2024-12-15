@@ -243,6 +243,8 @@ def generate_answer():
     matched_position = None
     ret, frame = camera_instance.camera.read()
 
+    frame = cv2.resize(frame, (RES_WIDTH, RES_HEIGHT))
+    
     if not ret:
         return jsonify({"error": "Failed to capture frame."}), 500
 
