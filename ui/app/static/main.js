@@ -164,6 +164,8 @@ async function selectSolution() {
     }
 
     try {
+        document.getElementById("status").innerText = "Connecting Solution ....";
+        
         const response = await fetch("/select_solution", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -395,7 +397,7 @@ async function rejectDecision() {
         }
     } catch (err) {
         console.error("Error regenerating answer:", err);
-        document.getElementById("status").innerText = "Error regenerating answer!";
+        // document.getElementById("status").innerText = "Error regenerating answer!";
     }
     
 }

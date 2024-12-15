@@ -129,7 +129,10 @@ def generate_vlm_response(model, tokenizer, image, clue, excluded_objects, devic
     start = time.time()
 
     # Load and preprocess the image
-    pixel_values = load_image(image, max_num=1).to(torch.bfloat16).to(device)
+    if device == 'mps':
+        pixel_values = load_image(image, max_num=1).to(torch.float16).to(device)
+    else:
+        pixel_values = load_image(image, max_num=1).to(torch.bfloat16).to(device)
 
     generation_config = dict(max_new_tokens=128, do_sample=False)
 

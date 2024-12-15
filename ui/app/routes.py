@@ -1,49 +1,77 @@
+# Standard libraries
+import os, sys, time, struct, wave, threading
+
+# Third-party libraries
+import cv2, torch, numpy as np
 from flask import Blueprint, g, render_template, request, jsonify, Response
-from .utils.camera import Camera, list_cameras
-import cv2
-import threading
-import torch
-import time
-import whisper
-from queue import Queue
-from app.utils.proces_audio import understand, speak
-import struct
-import wave
 from pvrecorder import PvRecorder
-import numpy as np
-from app.robot_control.guesser import GuessingBot
-from app.utils.load_models import load_yolo_model, load_llm_model, load_vlm_model, load_yolo_world_model, load_yolo_model
+import mujoco
+
+# Project-specific utilities
+from app.utils.camera import Camera, list_cameras
+from app.utils.process_audio import understand, speak
+from app.utils.load_models import load_yolo_model, load_llm_model, load_vlm_model, load_yolo_world_model
 from app.utils.inference_models import generate_llm_response, generate_vlm_response, yolo_world_detect
 from app.utils.process_object import process_detected_objects
-from TTS.api import TTS
-import mujoco
-from PIL import Image
+from app.robot_control.guesser import GuessingBot
 
+# Text-to-Speech API
+from TTS.api import TTS
+import whisper
+# ==================================================================
+
+
+# ==================================================================
+# [1] Platform detection & Set device
+def detect_os():
+    if sys.platform.startswith("darwin"):
+        return "macOS"
+    elif sys.platform.startswith("win32") or sys.platform.startswith("cygwin"):
+        return "Windows"
+    elif sys.platform.startswith("linux"):
+        return "Linux"
+    else:
+        return "Unknown"
+
+current_os = detect_os()
+
+if torch.cuda.is_available():           device = "cuda"
+elif torch.backends.mps.is_available(): device = "mps"
+else:                                   device = "cpu"
+
+if current_os == "macOS": os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+# ==================================================================
+
+
+# ==================================================================
+# [2] Set Resolutions
+RES_WIDTH, RES_HEIGHT = 640, 480
+# ==================================================================
+
+
+# Flask Blueprint
 main = Blueprint('main', __name__)
 
-if torch.cuda.is_available():
-    device = "cuda"
-else:
-    device = "cpu"
 
-# Load Whisper model for STT
+# ==================================================================
+# [3] Load Models : STT, TTS
+# STT
 stt_model = whisper.load_model("base")
 print("STT model loaded.")
 
-# Load TTs model for TTS
-tts_model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
-
-if device == 'cpu':
-    tts_model = TTS(tts_model_name, gpu=False)
-else:
-    tts_model = TTS(tts_model_name, gpu=True)
-
+# TTS
+tts_model_name = "tts_models/en/ljspeech/tacotron2-DDC_ph"          # <-> "tts_models/multilingual/multi-dataset/xtts_v2"
+if device == 'cuda':    tts_model = TTS(tts_model_name, gpu=True)
+else:                   tts_model = TTS(tts_model_name, gpu=False)
 print("TTS model loaded.")
+# ==================================================================
 
+
+# ==================================================================
+# [4] Set GuessingBot
 use_robot = False
 
 if use_robot:
-
     end_effector = 'joint6'
 
     np.set_printoptions(precision=6, suppress=True)
@@ -65,12 +93,14 @@ if use_robot:
 
     # Move real robot to home position
     guesser.move_to_home()
+# ==================================================================
 
 
-# variables for tracking
+# ==================================================================
+# [5] Variables 
+# for tracking
 camera_instance = None
 camera_search_results = []
-# buffer = Queue(maxsize=60)
 last_llm_answer = None
 last_all_identified_objects = None
 last_llm_explanation = None
@@ -89,39 +119,33 @@ vlm_model = None
 vlm_tokenizer = None
 yolo_model = None
 yolo_world_model = None
+# ==================================================================
 
 
+# ==================================================================
+# [6] Routes
 @main.route('/')
 def index():
-    """메인 페이지"""
     return render_template('index.html')
 
-
 def search_cameras():
-    """카메라 검색 작업"""
     global camera_search_results
     camera_search_results = list_cameras()
 
-
 @main.route('/start_camera_search', methods=['POST'])
 def start_camera_search():
-    """카메라 검색 시작"""
     thread = threading.Thread(target=search_cameras)
     thread.start()
     return jsonify({"status": "searching"})
 
-
 @main.route('/get_camera_results', methods=['GET'])
 def get_camera_results():
-    """카메라 검색 결과 반환"""
     global camera_search_results
     if camera_search_results:
         return jsonify({"status": "completed", "cameras": camera_search_results})
     return jsonify({"status": "searching"})
 
-
 def list_cameras():
-    """사용 가능한 카메라 장치를 검색"""
     index = 0
     cameras = []
     while True:
@@ -133,10 +157,8 @@ def list_cameras():
         index += 1
     return cameras
 
-
 @main.route('/connect_camera', methods=['POST'])
 def connect_camera():
-    """카메라 연결"""
     global camera_instance, wrong_answer
     camera_index = int(request.json.get("camera_index"))
 
@@ -148,7 +170,6 @@ def connect_camera():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 def camera_stream():
     global current_pipeline, camera_instance, yolo_model, last_llm_answer, last_select_object_coords, wrong_answer  # buffer
     while True:
@@ -159,7 +180,6 @@ def camera_stream():
         detected_objects = []
 
         if current_pipeline == "YOLO and LLM":
-            # YOLO 객체 감지
             results = yolo_model(frame, verbose=False)[0]
 
             # 감지된 객체의 이름과 좌표 저장
@@ -191,27 +211,15 @@ def camera_stream():
                     "coords": [x1, y1, x2, y2]
                 })
 
-            # detected_objects = [{
-            #     "name": last_llm_answer,
-            #     "coords": last_select_object_coords
-            # }]
-
-        # 버퍼에 데이터 추가 (입력 전후 2초 동안 유지)
-        # if buffer.full():
-        #     buffer.get()  # 오래된 데이터 제거
-        # buffer.put(detected_objects)
-
         # YOLO 감지 결과를 프레임에 표시
         for obj in detected_objects:
             x1, y1, x2, y2 = obj["coords"]
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, obj["name"], (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.putText(frame, obj["name"], (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # 프레임 반환
         _, encoded_frame = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + encoded_frame.tobytes() + b'\r\n')
-
 
 @main.route('/video_feed')
 def video_feed():
@@ -239,9 +247,6 @@ def generate_answer():
         return jsonify({"error": "Failed to capture frame."}), 500
 
     if current_pipeline == "YOLO and LLM":
-
-        # detected_objects = list(buffer.queue)
-
         detected_objects = []
         results = yolo_model(frame, verbose=False)[0]
 
@@ -257,13 +262,8 @@ def generate_answer():
         filtered_objects, unique_objects = process_detected_objects(
             excluded_objects, detected_objects)
 
-        # print("Detected objects:", detected_objects)
-        # print("Excluded objects:", excluded_objects)
-        # print("Filtered objects:", filtered_objects)
-        # print("Unique objects:", unique_objects)
-
         latency, selected_object, explanation = generate_llm_response(
-            llm_model, llm_tokenizer, clue, unique_objects)
+            llm_model, llm_tokenizer, clue, unique_objects, device)
 
         if selected_object != "unknown":
             all_identified_objects = unique_objects
@@ -278,7 +278,7 @@ def generate_answer():
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         latency, all_identified_objects, selected_object, explanation = generate_vlm_response(
-            vlm_model, vlm_tokenizer, rgb_image, clue, excluded_objects)
+            vlm_model, vlm_tokenizer, rgb_image, clue, excluded_objects, device)
 
         if selected_object != "unknown":
 
@@ -416,7 +416,7 @@ def speak_llm_output():
 
     # Convert LLM answer to speech and play it
     full_response = f"Identified objects are {', '.join(last_all_identified_objects)}. The selected object is {last_llm_answer}. {last_llm_explanation}"
-    speak(tts_model, full_response)
+    speak(tts_model, full_response, current_os)
 
     return jsonify({"status": "Playing LLM speech"})
 

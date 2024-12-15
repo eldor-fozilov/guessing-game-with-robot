@@ -15,11 +15,12 @@ def load_yolo_model(model_name="models/yolo11s.pt", device='cpu'):
 
 
 def load_llm_model(model_name="meta-llama/Llama-3.2-1B-Instruct", device="cpu"):
-
     llm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-    llm_model = AutoModelForCausalLM.from_pretrained(model_name,
-                                                     torch_dtype="auto",
-                                                     device_map=device)
+
+    if device == "mps":
+        llm_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, device_map=device)
+    else:
+        llm_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", device_map=device)
 
     llm_model.eval()
 
@@ -27,15 +28,24 @@ def load_llm_model(model_name="meta-llama/Llama-3.2-1B-Instruct", device="cpu"):
 
 
 def load_vlm_model(model_name="OpenGVLab/InternVL2_5-2B", load_in_8bit=False, device="cpu"):
-
-    vlm_model = AutoModel.from_pretrained(
-        model_name,
-        torch_dtype=torch.bfloat16,
-        low_cpu_mem_usage=True,
-        load_in_8bit=load_in_8bit,
-        trust_remote_code=True)
-    vlm_tokenizer = AutoTokenizer.from_pretrained(
-        model_name, trust_remote_code=True, use_fast=False)
+    if device == "mps":
+        vlm_model = AutoModel.from_pretrained(
+            model_name,
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+            load_in_8bit=load_in_8bit,
+            trust_remote_code=True)
+        vlm_tokenizer = AutoTokenizer.from_pretrained(
+            model_name, trust_remote_code=True, use_fast=False)
+    else:
+        vlm_model = AutoModel.from_pretrained(
+            model_name,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            load_in_8bit=load_in_8bit,
+            trust_remote_code=True)
+        vlm_tokenizer = AutoTokenizer.from_pretrained(
+            model_name, trust_remote_code=True, use_fast=False)
 
     vlm_model.to(device).eval()
 
