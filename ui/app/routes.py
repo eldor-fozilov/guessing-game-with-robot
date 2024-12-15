@@ -395,15 +395,21 @@ def speak_llm_output():
     )
     
     if response.status_code == 200:
+        print("Server response successful.")
         audio_base64 = response.json().get("audio")
         if audio_base64:
-            with open("tmp.wav", "wb") as f:
-                f.write(base64.b64decode(audio_base64))
-            os.system("afplay tmp.wav")
+            try:
+                with open("tmp.wav", "wb") as f:
+                    f.write(base64.b64decode(audio_base64))
+                print("Audio saved as tmp.wav")
+                os.system("afplay tmp.wav")  # Replace 'afplay' with your OS-specific command if not on macOS
+            except Exception as e:
+                print("Error while decoding or saving audio file:", e)
         else:
             print("No audio data received.")
     else:
-        print("Error:", response.json()["error"])
+        print("Server error:", response.status_code, response.text)
+
 
     
 
