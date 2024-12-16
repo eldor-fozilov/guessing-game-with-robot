@@ -1,11 +1,10 @@
 import sys
 import time
 import mujoco
-import mujoco.viewer
+# import mujoco.viewer
 import numpy as np
-from interface import SimulatedRobot
-from robot import Robot
-from constants import HOME
+# from app.control_robot.interface import SimulatedRobot
+# from robot import Robot
 
 class GuessingBot():
     def __init__(self, sim_robot, real_robot, end_effector='joint6'):
@@ -28,31 +27,51 @@ class GuessingBot():
     def pick_and_place(self, target_point, viewer=None):
         goal_point = [target_point[0], target_point[1] + 0.02, 0.08]
         # print("goal_point: ", goal_point)
-
         self.move_to_target(goal_point, v=viewer)
-
         # self.going_down()
         self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
-
         self.real_robot._gripper_on()
-
         # self.going_up()
         self.move_to_target([goal_point[0], goal_point[1], 0.1], v=viewer)
-
         # self.move_to_goal()
         self.move_to_target([0.15, 0.15, 0.1], v=viewer)
-
         self.real_robot._gripper_off()
-
         self.move_to_home()
 
 
 
+    def pick_and_ask(self, target_point, viewer=None):
+        goal_point = [target_point[0], target_point[1] + 0.02, 0.08]
+        # print("goal_point: ", goal_point)
+        self.move_to_target(goal_point, v=viewer)
+        # self.going_down()
+        self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
+        self.real_robot._gripper_on()
+        # self.going_up()
+        self.move_to_target([goal_point[0], goal_point[1], 0.1], v=viewer)
+        self.move_to_goal()
 
 
-    def move_to_home(self, steps=150):
+    def if_wrong(self, viewer=None):
+        self.move_to_target([0.15, 0.15, 0.1], v=viewer)
+        self.real_robot._gripper_off()
+        self.move_to_home()
+
+
+    # def if_wrong(self, target_point, viewer=None):
+    #     goal_point = [target_point[0], target_point[1] + 0.02, 0.05]
+    #     self.move_to_target(goal_point, v=viewer)
+    #     self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
+    #     self.real_robot._gripper_off()
+    #     self.move_to_home()
+
+
+
+
+    def move_to_home(self, steps=300): # 150
+        HOME = np.array([2048, 2048, 2048+1000, 1024, 2048, 2048])
         pwm = np.array(self.real_robot.read_position())
-        print("Move to home pose.")
+        # print("Move to home pose.")
         smooth_traj = np.linspace(pwm, HOME, steps)
         for pwm in smooth_traj:
             self.real_robot.set_goal_pos([int(p) for p in pwm])
@@ -77,7 +96,7 @@ class GuessingBot():
         final_rad = self.sim_robot.solve_ik(target_point, target_ori)
         final_pwm = self.sim_robot._pos2pwm(final_rad)
 
-        while v.is_running() and not stop_flag:
+        while not stop_flag:
             if step >= stop_iter:
                 print("[Control] Reached maximum iterations. Stopping.")
                 break
@@ -93,7 +112,7 @@ class GuessingBot():
 
                 ### Sync to simulator
                 mujoco.mj_step(self.sim_robot.m, self.sim_robot.d)
-                v.sync()
+                # v.sync()
 
                 # Calculate error
                 current_point = self.sim_robot.d.geom_xpos[self.body_id]
@@ -124,16 +143,30 @@ class GuessingBot():
 
                     self.sim_robot.d.qpos[:6] = self.sim_robot._pwm2pos(cur_pwm)
                     mujoco.mj_step(self.sim_robot.m, self.sim_robot.d)
-                    v.sync()
+                    # v.sync()
 
                     # Calculate error
                     current_point = self.sim_robot.d.geom_xpos[self.body_id]
                     error = np.linalg.norm(target_point - current_point)
-                    print(f"Error: {error}")
+                    # print(f"Error: {error}")
                     if error < 0.035:
                         pid = False
                         stop_flag = True
 
+
+
+    def move_to_goal(self, steps=200):
+        # home_place = [1278, 1689, 2743, 743, 2794, 2048]
+        home_place = [150, 1700, 2600, 1630, 2015, 2048]
+        # need to check giving coordinate (for 5 motors)
+        curr_pwm = np.array(self.real_robot.read_position())
+        traj = list(np.linspace(curr_pwm, home_place, steps))
+        for pwm in traj:
+            self.real_robot.set_goal_pos([int(p) for p in pwm])
+            curr_pwm = np.array(self.real_robot.read_position())
+            curr_pos = self.sim_robot._pwm2pos(curr_pwm)
+            self.sim_robot.d.qpos[:6] = curr_pos
+            mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
 
 
     def going_down(self, steps=100):
@@ -155,18 +188,6 @@ class GuessingBot():
         traj = list(np.linspace(pwm[1], 2048, steps))
         for p in traj:
             adj_pwm[1] = p
-            self.real_robot.set_goal_pos([int(p) for p in pwm])
-            curr_pwm = np.array(self.real_robot.read_position())
-            curr_pos = self.sim_robot._pwm2pos(curr_pwm)
-            self.sim_robot.d.qpos[:6] = curr_pos
-            mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
-
-
-    def move_to_goal(self, steps=300):
-        home_place = [1278, 1689, 2743, 743, 2794, 1123]
-        curr_pwm = np.array(self.real_robot.read_position())
-        traj = list(np.linspace(curr_pwm, home_place, steps))
-        for pwm in traj:
             self.real_robot.set_goal_pos([int(p) for p in pwm])
             curr_pwm = np.array(self.real_robot.read_position())
             curr_pos = self.sim_robot._pwm2pos(curr_pwm)

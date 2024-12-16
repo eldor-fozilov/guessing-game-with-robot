@@ -43,7 +43,6 @@ def detect_os():
     else:
         return "Unknown"
 
-
 current_os = detect_os()
 
 if torch.cuda.is_available():
@@ -87,7 +86,7 @@ print("TTS model loaded.")
 
 # ==================================================================
 # [4] Set GuessingBot
-use_robot = False
+use_robot = True
 
 if use_robot:
 
@@ -95,8 +94,8 @@ if use_robot:
     end_effector = 'joint6'
 
     # Define model and data in mujoco
-    urdf_path = './app/robot_control/low_cost_robot/scene.xml'
-    usb_device_name = '/dev/ttyACM0'
+    urdf_path = './ui/app/robot_control/low_cost_robot/scene.xml'
+    usb_device_name = '/dev/tty.usbmodem58760435011'
 
     robot_model = mujoco.MjModel.from_xml_path(urdf_path)
     data = mujoco.MjData(robot_model)
@@ -111,6 +110,20 @@ if use_robot:
     guesser.move_to_home()
     real_robot._gripper_off()
 
+import threading
+import time
+
+def run_viewer(robot_model, data):
+    """Function to launch the MuJoCo viewer."""
+    try:
+        with mujoco.viewer.launch_passive(robot_model, data) as viewer:
+            while viewer.is_running():
+                time.sleep(0.01)  # Avoid excessive CPU usage
+    except Exception as e:
+        print(f"Viewer thread encountered an error: {e}")
+
+# viewer_thread = threading.Thread(target=run_viewer, args=(robot_model, data), daemon=True)
+# viewer_thread.start()
 
 # ==================================================================
 
@@ -226,16 +239,19 @@ def camera_stream():
                     obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
 
         elif current_pipeline == "VLM and YOLO World" and last_llm_answer and not wrong_answer:
-            boxes, labels, label_texts, scores = yolo_world_detect(runner=yolo_world_model,
-                                                                   object_description=last_llm_answer, input_image=frame)
+            # boxes, labels, label_texts, scores = yolo_world_detect(runner=yolo_world_model,
+            #                                                        object_description=last_llm_answer, input_image=frame)
 
-            detected_objects = []
-            for box, label, label_text, score in zip(boxes, labels, label_texts, scores):
-                x1, y1, x2, y2 = map(int, box)
-                detected_objects.append({
-                    "name": label_text,
-                    "coords": [x1, y1, x2, y2]
-                })
+            # detected_objects = []
+            # for box, label, label_text, score in zip(boxes, labels, label_texts, scores):
+            #     x1, y1, x2, y2 = map(int, box)
+            #     detected_objects.append({
+            #         "name": label_text,
+            #         "coords": [x1, y1, x2, y2]
+            #     })
+            
+            label_text = last_llm_answer
+            detected_objects = [{'name': label_text, 'coords': last_select_object_coords}]
 
         # YOLO 감지 결과를 프레임에 표시
         for obj in detected_objects:
@@ -257,7 +273,7 @@ def video_feed():
 @main.route("/generate_answer", methods=["POST"])
 def generate_answer():
     global camera_instance, last_llm_answer, last_llm_explanation, last_transcription, current_pipeline, last_select_object_coords, last_all_identified_objects  # buffer
-    global yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer
+    global yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer, all_identified_objects
     data = request.json
     clue = data.get("clue", "").strip()
     excluded_objects = data.get("rejectedObjects", [])
@@ -271,7 +287,7 @@ def generate_answer():
     matched_position = None
     ret, frame = camera_instance.camera.read()
 
-    frame = cv2.resize(frame, (RES_WIDTH, RES_HEIGHT))
+    # frame = cv2.resize(frame, (RES_WIDTH, RES_HEIGHT))
 
     if not ret:
         return jsonify({"error": "Failed to capture frame."}), 500
@@ -459,21 +475,22 @@ def wrong_answer_status():
     print("Wrong answer flag set to:", wrong_answer)
 
     if wrong_answer and use_robot and moved_to_target_point:
+        guesser.if_wrong()
         # move the robot to designated point and throw the object
 
-        THROW_POINT = None  # define the throw point
-        guesser.move_to_target(THROW_POINT)
-        real_robot._gripper_off()  # drop the object
+        # THROW_POINT = [0.15, 0.15, 0.1]  # define the throw point
+        # guesser.move_to_target(THROW_POINT)
+        # real_robot._gripper_off()  # drop the object
 
         # return to the home position
-        guesser.move_to_home()
+        # guesser.move_to_home()
 
         moved_to_target_point = False
 
     if not wrong_answer and use_robot and moved_to_target_point:
         # move the robot to the home position
-        guesser.move_to_home()
         real_robot._gripper_off()
+        guesser.move_to_home()
 
         moved_to_target_point = False
 
@@ -493,19 +510,34 @@ def control_robot():
     # calibrate the coordinates from 2D to 3D and from camera frame to robot frame
     x1, y1, x2, y2 = last_select_object_coords
 
+    # resize to the RES_WIDTH and RES_HEIGHT
+    x1 = int(x1 * RES_WIDTH / 1920)
+    y1 = int(y1 * RES_HEIGHT / 1080)
+    x2 = int(x2 * RES_WIDTH / 1920)
+    y2 = int(y2 * RES_HEIGHT / 1080)
+
     center_point_x = (x1 + x2) / 2
     center_point_y = (y1 + y2) / 2
 
+    print("Center point:", center_point_x, center_point_y)
+
     target_point = t.cam2robot(center_point_x, center_point_y)
 
-    # move the robot to the target point and pick / place the object
-    guesser.move_to_target(target_point)
-    guesser.pick_and_place()
 
-    HUMAN_CONTACT_POINT = None  # define the human contact point
+
+ 
+
+    # move the robot to the target point and pick / place the object
+    # guesser.move_to_target()
+    guesser.pick_and_ask(target_point)
+
+    # HUMAN_CONTACT_POINT = None  # define the human contact point
+
+    # guesser.move_to_home()
+    # real_robot._gripper_off()
 
     # move the robot to the human contact point
-    guesser.move_to_target(HUMAN_CONTACT_POINT)
+    #guesser.move_to_target(HUMAN_CONTACT_POINT)
 
     moved_to_target_point = True
 

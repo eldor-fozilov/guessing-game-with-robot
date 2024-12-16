@@ -4,7 +4,7 @@ import numpy as np
 from ikpy.chain import Chain
 from ikpy.link import OriginLink, URDFLink
 
-from constants import PI
+from app.robot_control.constants import PI
 
 class SimulatedRobot:
     def __init__(self, model, data) -> None:

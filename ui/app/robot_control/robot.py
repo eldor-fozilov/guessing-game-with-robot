@@ -1,6 +1,6 @@
 # source: https://github.com/reedscot/low_cost_robot/blob/main/robot.py
 import numpy as np
-from dynamixel import Dynamixel, OperatingMode, ReadAttribute
+from app.robot_control.dynamixel import Dynamixel, OperatingMode, ReadAttribute
 import time
 from dynamixel_sdk import GroupSyncRead, GroupSyncWrite, DXL_LOBYTE, DXL_HIBYTE, DXL_LOWORD, DXL_HIWORD
 from enum import Enum, auto

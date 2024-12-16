@@ -18,7 +18,7 @@ class CalibBoard():
             
         self.square_size=0.03
         self.axis = np.float32([[0.03, 0, 0], [0, 0.03, 0], [0, 0, 0.03]]).reshape(-1, 3)
-        self.image="captured_image.jpg"
+        self.image="./ui/app/robot_control/captured_image.jpg"
 
     def draw(self, img, corners, imgpts):  ### Rearrange from BGR to RGB order ###
         c = corners[0].ravel()
@@ -65,10 +65,10 @@ class CalibBoard():
         # project 3D points to image plane
         imgpts, jac = cv2.projectPoints(self.axis, rvecs, tvecs, self.mtx, self.dist)
         img = self.draw(img, corners2, imgpts)
-        cv2.circle(img, (pixel_x, pixel_y), 5, (0,0,255), 3)
+        # cv2.circle(img, (pixel_x, pixel_y), 5, (0,0,255), 3)
 
-        cv2.imshow('img', img)
-        cv2.waitKey(0)
+        # cv2.imshow('img', img)
+        # cv2.waitKey(0)
 
         # Calculate Transformation Matrix (Robot to Camera)
         T_rc = self.T_rb @ np.linalg.inv(T_cb)
@@ -85,7 +85,7 @@ class CalibBoard():
         point_cam = np.array([x_cam, y_cam, self.z_cam, 1])
         point_robot = T_rc @ point_cam
 
-        return point_robot
+        return point_robot[:3]
     
 # board=CalibBoard()
 # print(board.cam2robot(389,170))
