@@ -1,8 +1,15 @@
 # Standard libraries
-import os, sys, time, struct, wave, threading
+import os
+import sys
+import time
+import struct
+import wave
+import threading
 
 # Third-party libraries
-import cv2, torch, numpy as np
+import cv2
+import torch
+import numpy as np
 from flask import Blueprint, g, render_template, request, jsonify, Response
 from pvrecorder import PvRecorder
 import mujoco
@@ -14,6 +21,9 @@ from app.utils.load_models import load_yolo_model, load_llm_model, load_vlm_mode
 from app.utils.inference_models import generate_llm_response, generate_vlm_response, yolo_world_detect
 from app.utils.process_object import process_detected_objects
 from app.robot_control.guesser import GuessingBot
+from app.robot_control.robot import Robot
+from app.robot_control.img2world import CalibBoard
+from app.robot_control.interface import SimulatedRobot
 
 # Text-to-Speech API
 from TTS.api import TTS
@@ -33,13 +43,18 @@ def detect_os():
     else:
         return "Unknown"
 
+
 current_os = detect_os()
 
-if torch.cuda.is_available():           device = "cuda"
-elif torch.backends.mps.is_available(): device = "mps"
-else:                                   device = "cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+elif torch.backends.mps.is_available():
+    device = "mps"
+else:
+    device = "cpu"
 
-if current_os == "macOS": os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+if current_os == "macOS":
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 # ==================================================================
 
 
@@ -60,9 +75,12 @@ stt_model = whisper.load_model("base")
 print("STT model loaded.")
 
 # TTS
-tts_model_name = "tts_models/en/ljspeech/tacotron2-DDC_ph"          # <-> "tts_models/multilingual/multi-dataset/xtts_v2"
-if device == 'cuda':    tts_model = TTS(tts_model_name, gpu=True)
-else:                   tts_model = TTS(tts_model_name, gpu=False)
+# <-> "tts_models/multilingual/multi-dataset/xtts_v2"
+tts_model_name = "tts_models/en/ljspeech/tacotron2-DDC_ph"
+if device == 'cuda':
+    tts_model = TTS(tts_model_name, gpu=True)
+else:
+    tts_model = TTS(tts_model_name, gpu=False)
 print("TTS model loaded.")
 # ==================================================================
 
@@ -72,32 +90,33 @@ print("TTS model loaded.")
 use_robot = False
 
 if use_robot:
-    end_effector = 'joint6'
 
     np.set_printoptions(precision=6, suppress=True)
+    end_effector = 'joint6'
 
     # Define model and data in mujoco
     urdf_path = './app/robot_control/low_cost_robot/scene.xml'
-    device_name = '/dev/ttyACM0'
+    usb_device_name = '/dev/ttyACM0'
 
-    robot = mujoco.MjModel.from_xml_path(urdf_path)
-    data = mujoco.MjData(robot)
+    robot_model = mujoco.MjModel.from_xml_path(urdf_path)
+    data = mujoco.MjData(robot_model)
 
-    # Make GueesingBot
-    guesser = GuessingBot(
-        model=robot,
-        data=data,
-        device_name=device_name,
-        end_effector=end_effector
-    )
+    # Setting Robot
+    sim_robot = SimulatedRobot(robot_model, data)
+    real_robot = Robot(device_name=usb_device_name)
+    guesser = GuessingBot(sim_robot, real_robot, end_effector=end_effector)
+    t = CalibBoard()
 
     # Move real robot to home position
     guesser.move_to_home()
+    real_robot._gripper_off()
+
+
 # ==================================================================
 
 
 # ==================================================================
-# [5] Variables 
+# [5] Variables
 # for tracking
 camera_instance = None
 camera_search_results = []
@@ -111,6 +130,7 @@ recording_thread = None
 current_pipeline = None
 camera_screenshot = None
 wrong_answer = False
+moved_to_target_point = False
 
 # variables for models
 llm_model = None
@@ -128,9 +148,11 @@ yolo_world_model = None
 def index():
     return render_template('index.html')
 
+
 def search_cameras():
     global camera_search_results
     camera_search_results = list_cameras()
+
 
 @main.route('/start_camera_search', methods=['POST'])
 def start_camera_search():
@@ -138,12 +160,14 @@ def start_camera_search():
     thread.start()
     return jsonify({"status": "searching"})
 
+
 @main.route('/get_camera_results', methods=['GET'])
 def get_camera_results():
     global camera_search_results
     if camera_search_results:
         return jsonify({"status": "completed", "cameras": camera_search_results})
     return jsonify({"status": "searching"})
+
 
 def list_cameras():
     index = 0
@@ -157,6 +181,7 @@ def list_cameras():
         index += 1
     return cameras
 
+
 @main.route('/connect_camera', methods=['POST'])
 def connect_camera():
     global camera_instance, wrong_answer
@@ -169,6 +194,7 @@ def connect_camera():
         return jsonify({"status": "connected"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 def camera_stream():
     global current_pipeline, camera_instance, yolo_model, last_llm_answer, last_select_object_coords, wrong_answer  # buffer
@@ -215,11 +241,13 @@ def camera_stream():
         for obj in detected_objects:
             x1, y1, x2, y2 = obj["coords"]
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, obj["name"], (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.putText(frame, obj["name"], (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # 프레임 반환
         _, encoded_frame = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + encoded_frame.tobytes() + b'\r\n')
+
 
 @main.route('/video_feed')
 def video_feed():
@@ -244,7 +272,7 @@ def generate_answer():
     ret, frame = camera_instance.camera.read()
 
     frame = cv2.resize(frame, (RES_WIDTH, RES_HEIGHT))
-    
+
     if not ret:
         return jsonify({"error": "Failed to capture frame."}), 500
 
@@ -425,31 +453,60 @@ def speak_llm_output():
 
 @ main.route('/wrong_answer_status', methods=['POST'])
 def wrong_answer_status():
-    global wrong_answer
+    global wrong_answer, moved_to_target_point, guesser, real_robot, use_robot
     wrong_answer = request.json.get("wrongAnswer", False)
 
     print("Wrong answer flag set to:", wrong_answer)
+
+    if wrong_answer and use_robot and moved_to_target_point:
+        # move the robot to designated point and throw the object
+
+        THROW_POINT = None  # define the throw point
+        guesser.move_to_target(THROW_POINT)
+        real_robot._gripper_off()  # drop the object
+
+        # return to the home position
+        guesser.move_to_home()
+
+        moved_to_target_point = False
+
+    if not wrong_answer and use_robot and moved_to_target_point:
+        # move the robot to the home position
+        guesser.move_to_home()
+        real_robot._gripper_off()
+
+        moved_to_target_point = False
 
     return jsonify({"status": "wrong answer flag set"})
 
 
 @ main.route("/control_robot", methods=["POST"])
 def control_robot():
-    global last_select_object_coords
+    global last_select_object_coords, moved_to_target_point, guesser, use_robot
+
+    if not last_select_object_coords:
+        return jsonify({"error": "No object selected"}),
+
+    if not use_robot:
+        return jsonify({"error": "Robot control is disabled"}),
 
     # calibrate the coordinates from 2D to 3D and from camera frame to robot frame
     x1, y1, x2, y2 = last_select_object_coords
-    x1_3d, y1_3d, z1_3d = None, None, None  # needs to be specified
 
-    target_point = [x1_3d, y1_3d, z1_3d]
+    center_point_x = (x1 + x2) / 2
+    center_point_y = (y1 + y2) / 2
+
+    target_point = t.cam2robot(center_point_x, center_point_y)
 
     # move the robot to the target point and pick / place the object
     guesser.move_to_target(target_point)
     guesser.pick_and_place()
 
-    # some additional logic to handle the object
+    HUMAN_CONTACT_POINT = None  # define the human contact point
 
-    # move the robot back to the home position
-    guesser.move_to_home()
+    # move the robot to the human contact point
+    guesser.move_to_target(HUMAN_CONTACT_POINT)
+
+    moved_to_target_point = True
 
     return jsonify({"status": "success"})
