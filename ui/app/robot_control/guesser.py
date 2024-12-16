@@ -3,125 +3,172 @@ import time
 import mujoco
 import mujoco.viewer
 import numpy as np
-from app.robot_control.interface import SimulatedRobot
-from app.robot_control.robot import Robot
-from app.robot_control.constants import HOME
-
+from interface import SimulatedRobot
+from robot import Robot
+from constants import HOME
 
 class GuessingBot():
-    def __init__(
-        self,
-        model,
-        data,
-        device_name='/dev/ttyACM0',
-        end_effector='joint6'
-    ):
-        # Robot in simulator
-        self.sim_robot = SimulatedRobot(model, data)
-        # Robot in real-world
-        self.real_robot = Robot(device_name)
-        # End-effector joint name
+    def __init__(self, sim_robot, real_robot, end_effector='joint6'):
         self.ee = end_effector
+        self.sim_robot = sim_robot
+        self.real_robot = real_robot
+        self.body_id = mujoco.mj_name2id(self.sim_robot.m, mujoco.mjtObj.mjOBJ_BODY, end_effector)
 
-        # For safety
-        self.track_buffer = 5
-        self.qpos_tracker = [None] * self.track_buffer  # position tracker
-        # pwm tracker
-        self.pwm_tracker = [None] * self.track_buffer
-        # acceleration tracker
-        self.qacc_tracker = [None] * self.track_buffer
-        self.col_tracker = [0] * self.track_buffer
-
-        self.cnt = 0
-        self.STOP = False              # safety stop flag
-        self.stop_cnt = 0              # counter for maintaining the stop state
-        self.restart_cnt = 0           # counter for restart delay
-        self.force_cnt = 0             # counter for detecting rigid body motion
-        self.stop_buffer = 5           # buffer size for stop handling
-        self.vel_revert_buffer = 300   # buffer size for velocity recovery
-        self.col_revert_buffer = 500   # buffer size for collision recovery
-        self.restart_buffer = 50       # buffer size for restart delay
-        self.force_buffer = 5          # threshold buffer for detecting rigid body motion
-        self.gravity_thres = 0.03      # threshold for gravity-based motion
-        self.force_thres = 0.0075      # threshold for force-based motion
-        self.critical_thres = 0.1      # threshold for critical velocity
-
-    def move_to_home(self, steps=1000):
-        pwm = np.array(self.real_robot.read_position())
+        # Setting up for real robot
         self.real_robot._set_position_control()
-        self.real_robot._enable_torque()
-        time.sleep(1.0)
+        self.real_robot._enable_torque()    
 
-        print("\t[Control] Move to home pose.")
-        smooth_traj = np.linspace(pwm, HOME, steps)
-        for pwm in smooth_traj:
-            self.real_robot.set_goal_pos([int(p) for p in pwm])  # gripper?????
-            # time.sleep(0.00001)
-            self.pwm_tracker.append(pwm)
-            self.qpos_tracker.append(self.sim_robot._pwm2pos(pwm))
-        self.real_robot._gripper_on()
+        # Move sim_robot to current position of real robot
+        pwm = np.array(self.real_robot.read_position())
+        current_qpos = self.sim_robot._pwm2pos(pwm)
+        self.sim_robot.d.qpos[:6] = current_qpos
 
-    def move_to_target(self, target_point, viewer=None, steps=10, stop_iter=10000):
-        prev_error = np.inf
-        step = 0
 
-        while viewer.is_running():
-            if step >= stop_iter:
-                break
 
-            # Plan trajectory
-            col_free_trajs = self.sim_robot.plan_traj(
-                ee_target_pos=target_point, ee_target_rot=None, steps=steps)
-            # Move real robot to target pos
-            for i, qpos in enumerate(col_free_trajs):
-                # Move to target
-                target_pwm = self.sim_robot._pos2pwm(qpos)
-                pwm_int = [int(pwm) for pwm in target_pwm]
-                self.real_robot.set_goal_pos(pwm_int)
+    def pick_and_place(self, target_point, viewer=None):
+        goal_point = [target_point[0], target_point[1] + 0.02, 0.08]
+        # print("goal_point: ", goal_point)
 
-                current_pwm = np.array(self.real_robot.read_position())
-                current_qpos = self.sim_robot._pwm2pos(current_pwm)
+        self.move_to_target(goal_point, v=viewer)
 
-                # Sync to simulator
-                self.sim_robot.sync_with_robot(current_pwm)
-                viewer.sync()
-
-                # Update pwm and position tracker to revert
-                self.pwm_tracker.append(current_pwm)
-                self.qpos_tracker.append(current_qpos)
-
-                if i % 20 == 0:
-                    print(
-                        f"\t[Control] (Sync) Current pos: {current_pwm} / Current rad: {current_qpos}")
-
-            # Calculate error
-            current_point = self.sim_robot.read_ee_pos(joint_name=self.ee)
-
-            error = np.linalg.norm(target_point - current_point)
-            if abs(error - prev_error) <= 1e-4 and error < 0.1:
-                print(
-                    f"\t[Control] Converged at step {step} with error: {error}")
-                break
-
-            prev_error = error
-            step += 1
-
-            time.sleep(0.01)
-
-        return
-
-    def pick_and_place(self):
+        # self.going_down()
+        self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
 
         self.real_robot._gripper_on()
-        time.sleep(5)
+
+        # self.going_up()
+        self.move_to_target([goal_point[0], goal_point[1], 0.1], v=viewer)
+
+        # self.move_to_goal()
+        self.move_to_target([0.15, 0.15, 0.1], v=viewer)
+
         self.real_robot._gripper_off()
 
-        # Pick the object
+        self.move_to_home()
 
-        # Move to the position to place the object
 
-        # Place the object
 
-    def finish(self):
-        time.sleep(5)
-        self.real_robot._disable_torque()
+
+
+    def move_to_home(self, steps=150):
+        pwm = np.array(self.real_robot.read_position())
+        print("Move to home pose.")
+        smooth_traj = np.linspace(pwm, HOME, steps)
+        for pwm in smooth_traj:
+            self.real_robot.set_goal_pos([int(p) for p in pwm])
+
+        curr_pwm = np.array(self.real_robot.read_position())
+        curr_pos = self.sim_robot._pwm2pos(curr_pwm)
+        self.sim_robot.d.qpos[:6] = curr_pos
+        mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
+
+
+
+    def move_to_target(self, target_point, v=None, steps=100, stop_iter=10000):
+        target_ori = np.array([[1, 0, 0],
+                                [0, 0, 1],
+                                [0, -1, 0]])  # roll 270deg
+        prev_error = np.inf
+        step = 0
+        stop_flag = False
+
+        # Read initial PWM and solve IK for the target
+        curr_pwm = np.array(self.real_robot.read_position())
+        final_rad = self.sim_robot.solve_ik(target_point, target_ori)
+        final_pwm = self.sim_robot._pos2pwm(final_rad)
+
+        while v.is_running() and not stop_flag:
+            if step >= stop_iter:
+                print("[Control] Reached maximum iterations. Stopping.")
+                break
+            traj = list(np.linspace(curr_pwm, final_pwm, steps))  # Generate trajectory
+
+            # Move along the trajectory
+            for pwm in traj:
+                self.real_robot.set_goal_pos([int(p) for p in pwm])
+                curr_pwm = np.array(self.real_robot.read_position())
+                curr_pos = self.sim_robot._pwm2pos(curr_pwm)
+                self.sim_robot.d.qpos[:6] = curr_pos
+                mujoco.mj_forward(self.sim_robot.m, self.sim_robot.d)
+
+                ### Sync to simulator
+                mujoco.mj_step(self.sim_robot.m, self.sim_robot.d)
+                v.sync()
+
+                # Calculate error
+                current_point = self.sim_robot.d.geom_xpos[self.body_id]
+                error = np.linalg.norm(target_point - current_point)
+
+                # Check convergence or need for PID adjustment
+                if abs(error - prev_error) <= 1e-5 and error < 0.035:
+                    print(f"[Control] Converged at step {step} with error: {error}")
+                    stop_flag = True
+                    break
+
+                prev_error = error
+                step += 1
+                # print(f"Error: {error}")
+                time.sleep(0.005)
+
+
+            # Adjust using PID Control
+            if not stop_flag:
+                pid = True
+                while pid:
+                    cur_pwm = np.array(self.real_robot.read_position())
+                    control_signal = self.sim_robot.control_pid(cur_pwm, final_pwm, 
+                                                                Kp=0.5, Ki=0.1, Kd=0.01, adjust_rate=0.1)
+                    final_pwm = curr_pwm + control_signal
+                    pwm_int = [int(pwm) for pwm in final_pwm]
+                    self.real_robot.set_goal_pos(pwm_int)
+
+                    self.sim_robot.d.qpos[:6] = self.sim_robot._pwm2pos(cur_pwm)
+                    mujoco.mj_step(self.sim_robot.m, self.sim_robot.d)
+                    v.sync()
+
+                    # Calculate error
+                    current_point = self.sim_robot.d.geom_xpos[self.body_id]
+                    error = np.linalg.norm(target_point - current_point)
+                    print(f"Error: {error}")
+                    if error < 0.035:
+                        pid = False
+                        stop_flag = True
+
+
+
+    def going_down(self, steps=100):
+        pwm = np.array(self.real_robot.read_position())
+        adj_pwm = pwm[:]
+        traj = list(np.linspace(pwm[1], 1250, steps))
+        for p in traj:
+            adj_pwm[1] = p
+            self.real_robot.set_goal_pos([int(p) for p in pwm])
+            curr_pwm = np.array(self.real_robot.read_position())
+            curr_pos = self.sim_robot._pwm2pos(curr_pwm)
+            self.sim_robot.d.qpos[:6] = curr_pos
+            mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
+
+
+    def going_up(self, steps=100):
+        pwm = np.array(self.real_robot.read_position())
+        adj_pwm = pwm[:]
+        traj = list(np.linspace(pwm[1], 2048, steps))
+        for p in traj:
+            adj_pwm[1] = p
+            self.real_robot.set_goal_pos([int(p) for p in pwm])
+            curr_pwm = np.array(self.real_robot.read_position())
+            curr_pos = self.sim_robot._pwm2pos(curr_pwm)
+            self.sim_robot.d.qpos[:6] = curr_pos
+            mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
+
+
+    def move_to_goal(self, steps=300):
+        home_place = [1278, 1689, 2743, 743, 2794, 1123]
+        curr_pwm = np.array(self.real_robot.read_position())
+        traj = list(np.linspace(curr_pwm, home_place, steps))
+        for pwm in traj:
+            self.real_robot.set_goal_pos([int(p) for p in pwm])
+            curr_pwm = np.array(self.real_robot.read_position())
+            curr_pos = self.sim_robot._pwm2pos(curr_pwm)
+            self.sim_robot.d.qpos[:6] = curr_pos
+            mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)

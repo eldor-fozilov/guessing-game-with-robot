@@ -1,4 +1,9 @@
+import numpy as np
+import math 
+
+
 # robot home pos
-HOME = [2048, 2048, 2048, 1024, 2048, 2048]
+# HOME = np.array([2048, 2048, 2048, 1024, 2048, 2048])
+HOME = np.array([2048, 2048, 2048+1000, 1024, 2048, 2048])
 # pi
-PI = 3.14159265
+PI = math.pi

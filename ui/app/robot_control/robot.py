@@ -1,6 +1,6 @@
 # source: https://github.com/reedscot/low_cost_robot/blob/main/robot.py
 import numpy as np
-from app.robot_control.dynamixel import Dynamixel, OperatingMode, ReadAttribute
+from dynamixel import Dynamixel, OperatingMode, ReadAttribute
 import time
 from dynamixel_sdk import GroupSyncRead, GroupSyncWrite, DXL_LOBYTE, DXL_HIBYTE, DXL_LOWORD, DXL_HIWORD
 from enum import Enum, auto
@@ -17,11 +17,10 @@ class MotorControlType(Enum):
 
 class Robot:
     def __init__(self, device_name: str, baudrate=1_000_000, servo_ids=[1, 2, 3, 4, 5, 6]):
-        # def __init__(self, dynamixel, baudrate=1_000_000, servo_ids=[1, 2, 3, 4, 5, 6]):
+    # def __init__(self, dynamixel, baudrate=1_000_000, servo_ids=[1, 2, 3, 4, 5, 6]):
         self.servo_ids = servo_ids
         # self.dynamixel = dynamixel
-        self.dynamixel = Dynamixel.Config(
-            baudrate=baudrate, device_name=device_name).instantiate()
+        self.dynamixel = Dynamixel.Config(baudrate=baudrate, device_name=device_name).instantiate()
         self.torque_reader = GroupSyncRead(
             self.dynamixel.portHandler,
             self.dynamixel.packetHandler,
@@ -61,7 +60,7 @@ class Robot:
             2)
         for id in self.servo_ids:
             self.pwm_writer.addParam(id, [2048])
-
+        
         self.vel_writer = GroupSyncWrite(
             self.dynamixel.portHandler,
             self.dynamixel.packetHandler,
@@ -73,7 +72,7 @@ class Robot:
         self._disable_torque()
         self.motor_control_state = MotorControlType.DISABLED
 
-    def read_position(self, tries=5):
+    def read_position(self, tries=15):
         """
         Reads the joint positions of the robot. 2048 is the center position. 0 and 4096 are 180 degrees in each direction.
         :param tries: maximum number of tries to read the position
@@ -87,13 +86,12 @@ class Robot:
                 print(f'failed to read position!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         positions = []
         for id in self.servo_ids:
-            position = self.position_reader.getData(
-                id, ReadAttribute.POSITION.value, 4)
+            position = self.position_reader.getData(id, ReadAttribute.POSITION.value, 4)
             if position > 2 ** 31:
                 position -= 2 ** 32
             positions.append(position)
         return positions
-
+    
     def read_torque_onoff(self):
         """
         Reads the torque on off of the robot.
@@ -106,7 +104,7 @@ class Robot:
                 t -= 2 ** 32
             torque.append(t)
         return torque
-
+    
     def read_velocity(self, tries=5):
         """
         Reads the joint velocities of the robot.
@@ -118,11 +116,10 @@ class Robot:
                 return self.read_velocity(tries=tries - 1)
             else:
                 print(f'failed to read velocity!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-
+        
         velocties = []
         for id in self.servo_ids:
-            velocity = self.velocity_reader.getData(
-                id, ReadAttribute.VELOCITY.value, 4)
+            velocity = self.velocity_reader.getData(id, ReadAttribute.VELOCITY.value, 4)
             if velocity > 2 ** 31:
                 velocity -= 2 ** 32
             velocties.append(velocity)
@@ -233,13 +230,14 @@ class Robot:
         # self._enable_torque()
         self.motor_control_state = MotorControlType.VELOCITY_CONTROL
 
+
     def _gripper_on(self):
-        action_temp = [0, 0, 0, 0, 0, 0]
+        action_temp = [0,0,0,0,0,0]
         if not self.motor_control_state is MotorControlType.POSITION_CONTROL:
             self._set_position_control()
         for i, motor_id in enumerate(self.servo_ids):
             if motor_id == 6:
-                action_temp[i] = 2000
+                action_temp[i] = 2200
             else:
                 action_temp[i] = self.read_position()[i]
             data_write = [DXL_LOBYTE(DXL_LOWORD(action_temp[i])),
@@ -248,9 +246,11 @@ class Robot:
                           DXL_HIBYTE(DXL_HIWORD(action_temp[i]))]
             self.pos_writer.changeParam(motor_id, data_write)
         self.pos_writer.txPacket()
+        time.sleep(0.5)
+
 
     def _gripper_off(self):
-        action_temp = [0, 0, 0, 0, 0, 0]
+        action_temp = [0,0,0,0,0,0]
         if not self.motor_control_state is MotorControlType.POSITION_CONTROL:
             self._set_position_control()
         for i, motor_id in enumerate(self.servo_ids):
@@ -259,11 +259,12 @@ class Robot:
             else:
                 action_temp[i] = 1100
             data_write = [DXL_LOBYTE(DXL_LOWORD(action_temp[i])),
-                          DXL_HIBYTE(DXL_LOWORD(action_temp[i])),
-                          DXL_LOBYTE(DXL_HIWORD(action_temp[i])),
-                          DXL_HIBYTE(DXL_HIWORD(action_temp[i]))]
+                            DXL_HIBYTE(DXL_LOWORD(action_temp[i])),
+                            DXL_LOBYTE(DXL_HIWORD(action_temp[i])),
+                            DXL_HIBYTE(DXL_HIWORD(action_temp[i]))]
             self.pos_writer.changeParam(motor_id, data_write)
         self.pos_writer.txPacket()
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":
