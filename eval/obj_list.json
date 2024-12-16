@@ -1,0 +1,656 @@
+{
+    "class": {
+        "0": "apple",
+        "1": "drone",
+        "2": "book",
+        "3": "microwave",
+        "4": "cell phone",
+        "5": "grape",
+        "6": "spoon",
+        "7": "vase",
+        "8": "pencil",
+        "9": "toothbrush",
+        "10": "scissors",
+        "11": "basket",
+        "12": "calculator",
+        "13": "tray",
+        "14": "tie",
+        "15": "skateboard",
+        "16": "broccoli",
+        "17": "orange",
+        "18": "teddy bear",
+        "19": "umbrella",
+        "20": "cup",
+        "21": "mouse",
+        "22": "eraser",
+        "23": "pineapple",
+        "24": "lamp",
+        "25": "cactus",
+        "26": "oven",
+        "27": "remote",
+        "28": "snowboard",
+        "29": "bottle"
+    },
+    "set": {
+        "0": {
+            "class_name": ["microwave", "cell phone", "spoon", "scissors", "snowboard"],
+            "class_idx": [3, 4, 6, 26, 28],
+            "clue": {
+                "microwave": [
+                    "It is a box that heats things quickly.",
+                    "It is an appliance transforming power into warmth for meals.",
+                    "It is a chamber using electromagnetic waves for energy transfer."
+                ],
+                "cell phone": [
+                    "It is a device for talking to others anywhere.",
+                    "It is a handheld tool for staying connected and informed.",
+                    "It is a pocket-sized portal to global communication and data."
+                ],
+                "spoon": [
+                    "It is a tool to hold and lift small portions.",
+                    "It is a utensil balancing sustenance for human consumption.",
+                    "It is a curved implement for transporting liquid or solids."
+                ],
+                "scissors": [
+                    "It is a tool for cutting things apart easily.",
+                    "It is a pair of blades working together in precision.",
+                    "It is a hinged device slicing materials with coordinated motion."
+                ],
+                "snowboard": [
+                    "It is a board for sliding down snowy hills.",
+                    "It is equipment designed for mastering gravity on frozen slopes.",
+                    "It is a plank balancing control and speed on wintry terrain."
+                ]
+            }
+        },
+        "1": {
+            "class_name": ["spoon", "umbrella", "cactus", "oven", "bottle"],
+            "class_idx": [6, 19, 25, 26, 29],
+            "clue": {
+                "spoon": [
+                    "It is curved to carry small portions.",
+                    "It is essential for stirring or sipping liquids.",
+                    "It reflects light from its polished concave surface."
+                ],
+                "umbrella": [
+                    "It is opened to block falling drops.",
+                    "It shields against wet or sunny skies.",
+                    "It spans over you with tensioned fabric and ribs."
+                ],
+                "cactus": [
+                    "It is prickly and thrives in dry places.",
+                    "It stores water to survive barren landscapes.",
+                    "It is a natural fortress of spines and resilience."
+                ],
+                "oven": [
+                    "It is heated to cook food evenly.",
+                    "It transforms raw ingredients with steady warmth.",
+                    "It encases firepower within insulated metal walls."
+                ],
+                "bottle": [
+                    "It holds liquids in a portable shape.",
+                    "It seals contents with a tight cap or stopper.",
+                    "It is a vessel shaped by function and material."
+                ]
+            }
+        },
+        "2": {
+            "class_name": ["apple", "book", "vase", "skateboard", "oven"],
+            "class_idx": [0, 2, 7, 15, 26],
+            "clue": {
+                "apple": [
+                    "It is a juicy snack with a crisp texture.", 
+                    "It is a symbol of health and knowledge.", 
+                    "It is a fleshy fruit encasing seeds for propagation." 
+                ], 
+                "book": [ 
+                    "It is a source of stories and learning.", 
+                    "It is pages bound together holding ideas and wisdom.", 
+                    "It is a repository of human thought and experience."
+                ], 
+                "vase": [ 
+                    "It is a container for holding flowers.", 
+                    "It is a decorative object often made of ceramic or glass.", 
+                    "It is a vessel designed for aesthetics and floral arrangements." 
+                ], 
+                "skateboard": [ 
+                    "It is a tool for gliding on wheels.", 
+                    "It is a platform for stunts and personal transportation.", 
+                    "It is a device combining balance, momentum, and freedom." 
+                ], 
+                "oven": [ 
+                    "It is used to bake and roast food.", 
+                    "It is a chamber applying heat to cook meals.", 
+                    "It is a controlled thermal environment for culinary transformations." 
+                ]
+            }
+        },
+        "3": {
+            "class_name": ["microwave", "calculator", "mouse", "lamp", "snowboard"],
+            "class_idx": [3, 12, 21, 24, 28],
+            "clue": {
+                "microwave": [
+                    "It is a box that warms your meals quickly.",
+                    "It is a device emitting waves to energize food.",
+                    "It is a chamber transforming electromagnetic energy into heat."
+                ],
+                "calculator": [
+                    "It is a tool that helps solve math problems fast.",
+                    "It is a device that simplifies numerical operations precisely.",
+                    "It is a system processing algorithms to compute quantitative data."
+                ],
+                "mouse": [
+                    "It is a device guiding a pointer on a screen.",
+                    "It is an accessory enabling spatial interaction with software tools.",
+                    "It is a peripheral interpreting movement into digital coordinates."
+                ],
+                "lamp": [
+                    "It is a fixture that brightens your space at night.",
+                    "It is a source illuminating tasks with focused light beams.",
+                    "It is a structure converting electricity into visible light emissions."
+                ],
+                "snowboard": [
+                    "It is a board that glides over snowy slopes for fun.",
+                    "It is a tool balancing speed and control on frozen surfaces.",
+                    "It is an apparatus utilizing edge friction to maneuver on snow."
+                ]
+            }
+        },
+        "4": {
+            "class_name": ["cell phone", "spoon", "broccoli", "lamp", "bottle"],
+            "class_idx": [4, 6, 16, 24, 29],
+            "clue": {
+                "cell phone": [
+                    "It is your pocket-sized connection to the world.",
+                    "It is a tool for voices, texts, and screens.",
+                    "It is a compact nexus of modern communication."
+                ],
+                "spoon": [
+                    "It is a tool for scooping and tasting.",
+                    "It is shaped to cradle liquids or small solids.",
+                    "It is a concave utensil designed for measured consumption."
+                ],
+                "broccoli": [
+                    "It is a green plant often found on plates.",
+                    "It is a tree-like vegetable rich in nutrients.",
+                    "It is an edible crucifer with dense floral clusters."
+                ],
+                "lamp": [
+                    "It is a source of light in the dark.",
+                    "It is a device that illuminates spaces with ease.",
+                    "It is a fixture blending utility with aesthetic radiance."
+                ],
+                "bottle": [
+                    "It is a vessel for holding liquids securely.",
+                    "It is a container with a neck and a seal.",
+                    "It is a portable receptacle for liquid preservation."
+                ]
+            }
+        },
+        "5": {
+            "class_name": ["apple", "tie", "cactus", "oven", "snowboard"],
+            "class_idx": [0, 14, 25, 26, 28],
+            "clue": {
+                "apple": [
+                    "It is round and often found in fruit bowls.",
+                    "It is crisp, sweet, and sometimes keeps doctors away.",
+                    "It is a pomaceous symbol of knowledge and temptation."
+                ],
+                "tie": [
+                    "It is worn around the neck for formal occasions.",
+                    "It is both decorative and a sign of professionalism.",
+                    "It is a long, knotted fabric conveying sophistication and authority."
+                ],
+                "cactus": [
+                    "It is a spiky plant thriving in dry places.",
+                    "It is a survivor, storing water in harsh climates.",
+                    "It is an arid sentinel, bristling with defensive adaptations."
+                ],
+                "oven": [
+                    "It is used to heat food for meals and baking.",
+                    "It is a chamber of culinary transformation through high temperatures.",
+                    "It is a metallic vault, harnessing fire for alchemy of flavor."
+                ],
+                "snowboard": [
+                    "It is used to glide down snowy slopes with style.",
+                    "It is a winter companion for gravity-fueled sport and thrill.",
+                    "It is a flat, waxed steed for carving powdered trails."
+                ]
+            }
+        },
+        "6": {
+            "class_name": ["drone", "cell phone", "scissors", "broccoli", "remote"],
+            "class_idx": [1, 4, 10, 16, 27],
+            "clue": {
+                "drone": [
+                    "It is a flying device controlled from a distance.",
+                    "It is a buzzing tool for aerial perspectives.",
+                    "It is a pilotless machine navigating unseen currents."
+                ],
+                "cell phone": [
+                    "It is a pocket-sized tool for instant communication.",
+                    "It is a handheld portal to a digital world.",
+                    "It is a lifeline bridging time and space seamlessly."
+                ],
+                "scissors": [
+                    "It is a tool for cutting with two sharp edges.",
+                    "It is a hinged device slicing materials with precision.",
+                    "It is a shearing instrument dividing forms effortlessly."
+                ],
+                "broccoli": [
+                    "It is a green vegetable shaped like tiny trees.",
+                    "It is a nutrient-packed plant with clustered florets.",
+                    "It is an edible crown of dense, branching textures."
+                ],
+                "remote": [
+                    "It is a handheld device for controlling machines wirelessly.",
+                    "It is a signal-emitting tool commanding actions from afar.",
+                    "It is an interface bridging convenience and operational distance."
+                ]
+            }
+        },
+        "7": {
+            "class_name": ["pencil", "scissors", "cup", "mouse", "cactus"],
+            "class_idx": [8, 10, 20, 21, 25],
+            "clue": {
+                "pencil": [
+                    "It is used to make marks on paper.",
+                    "It contains a core that can be sharpened.",
+                    "It symbolizes impermanence and erasable thoughts."
+                ],
+                "scissors": [
+                    "It is used to cut through materials.",
+                    "It has two blades joined at a pivot point.",
+                    "It transforms motion into precision for separation."
+                ],
+                "cup": [
+                    "It is used to hold liquid for drinking.",
+                    "It often has a handle for easy grip.",
+                    "It bridges need and ritual in its design."
+                ],
+                "mouse": [
+                    "It is used to control a pointer on a screen.",
+                    "It translates motion into digital actions effortlessly.",
+                    "It connects human intent with virtual environments."
+                ],
+                "cactus": [
+                    "It thrives with minimal water in dry places.",
+                    "It is spiked and stores moisture in its body.",
+                    "It exemplifies resilience through adaptive evolution."
+                ]
+            }
+        },
+        "8": {
+            "class_name": ["book", "tie", "skateboard", "cactus", "remote"],
+            "class_idx": [2, 14, 15, 25, 27],
+            "clue": {
+                "book": [ 
+                    "It is a gateway to countless stories and ideas.", 
+                    "It is bound knowledge passed through generations to enlighten.", 
+                    "It is a quiet keeper of narratives and truths." 
+                ], 
+                "tie": [ 
+                    "It is worn to complete a formal outfit.", 
+                    "It is a knotted strip of fabric symbolizing sophistication.", 
+                    "It is an ornamental binding of societal decorum." 
+                ], 
+                "skateboard": [ 
+                    "It is a platform to roll and glide for fun.", 
+                    "It is a tool for tricks and urban exploration.", 
+                    "It is a moving canvas balancing creativity and momentum." 
+                ], 
+                "cactus": [ 
+                    "It is a plant thriving in dry, sunlit places.", 
+                    "It is a spiked survivor of arid environments and heat.", 
+                    "It is nature’s paradox of resilience and guarded hydration." 
+                ], 
+                "remote": [ 
+                    "It is a device for controlling things from a distance.", 
+                    "It is a link between convenience and operational precision.", 
+                    "It is the unseen tether to systems beyond reach." 
+                ]
+            }
+        },
+        "9": {
+            "class_name": ["drone", "microwave", "broccoli", "pineapple", "lamp"],
+            "class_idx": [1, 3, 16, 23, 24],
+            "clue": {
+                "drone": [ 
+                    "It is a device that moves through the air.", 
+                    "It is a tool often used for aerial perspectives.", 
+                    "It is a flying machine controlled remotely or autonomously." 
+                ], 
+                "microwave": [ 
+                    "It is a box that heats food quickly.", 
+                    "It is a kitchen appliance using waves to cook.", 
+                    "It is a device utilizing electromagnetic radiation for food preparation." 
+                ], 
+                "broccoli": [ 
+                    "It is a green vegetable on your dinner plate.", 
+                    "It is a plant with clusters resembling tiny trees.", 
+                    "It is an edible flowering head from the Brassica family." 
+                ], 
+                "pineapple": [ 
+                    "It is a spiky fruit with a sweet, juicy center.", 
+                    "It is a tropical fruit known for its crown-like top.", 
+                    "It is a composite fruit formed from coalesced multiple berries." 
+                ], 
+                "lamp": [ 
+                    "It is an object that makes a room brighter.", 
+                    "It is a device providing light through electricity or flame.", 
+                    "It is a tool converting energy to visible illumination." 
+                ]
+            }
+        },
+        "10": {
+            "class_name": ["vase", "calculator", "broccoli", "eraser", "cactus"],
+            "class_idx": [7, 12, 16, 22, 25],
+            "clue": {
+                "vase": [
+                    "It is a holder for nature's beauty.",
+                    "It is a container shaped for fragile adornments.",
+                    "It is an ornamental vessel, balancing art and utility."
+                ],
+                "calculator": [
+                    "It is a tool for quick math solutions.",
+                    "It is a device that translates numbers into clarity.",
+                    "It is a digital brain simplifying complex computations."
+                ],
+                "broccoli": [
+                    "It is a green piece of healthy eating.",
+                    "It is a tree-like bite, rich in nutrients.",
+                    "It is a cruciferous vegetable, celebrated for its earthy flavor."
+                ],
+                "eraser": [
+                    "It is a remover of pencil mistakes.",
+                    "It is a tool that restores blank surfaces.",
+                    "It is a friction-based corrector of graphite impressions."
+                ],
+                "cactus": [
+                    "It is a plant built for arid survival.",
+                    "It is a spiny sentinel of desert ecosystems.",
+                    "It is a succulent, thriving through water conservation and resilience."
+                ]
+            }
+        },
+        "11": {
+            "class_name": ["cell phone", "pencil", "basket", "pineapple", "lamp"],
+            "class_idx": [4, 8, 11, 23, 24],
+            "clue": {
+                "cell phone": [
+                    "It is a pocket-sized connection to others.",
+                    "It is a tool blending communication and convenience.",
+                    "It is a modern extension of human interaction."
+                ],
+                "pencil": [
+                    "It is a tool for writing or drawing.",
+                    "It is a device that erases mistakes with ease.",
+                    "It is a slender stick, carving thoughts into existence."
+                ],
+                "basket": [
+                    "It is a container for holding items.",
+                    "It is a woven vessel for carrying goods.",
+                    "It is an intricate frame balancing function and form."
+                ],
+                "pineapple": [
+                    "It is a tropical fruit with spiky skin.",
+                    "It is a sweet reward wrapped in a tough exterior.",
+                    "It is a symbol of hospitality hiding in golden layers."
+                ],
+                "lamp": [
+                    "It is a device that brings light to darkness.",
+                    "It is a tool for illuminating spaces and ideas.",
+                    "It is an object blending utility and aesthetic radiance."
+                ]
+            }
+        },
+        "12": {
+            "class_name": ["book", "spoon", "toothbrush", "tray", "orange"],
+            "class_idx": [2, 6, 9, 13, 17],
+            "clue": {
+                "book": [
+                    "It is a source of stories and knowledge.",
+                    "It is a container for words and ideas.",
+                    "It is a collection of bound, sequential pages."
+                ],
+                "spoon": [
+                    "It is used to hold and lift small amounts.",
+                    "It is curved to carry liquid or solids.",
+                    "It is a concave tool for eating or serving."
+                ],
+                "toothbrush": [
+                    "It is used to clean teeth daily.",
+                    "It has bristles for scrubbing surfaces.",
+                    "It is a handheld tool for oral hygiene."
+                ],
+                "tray": [
+                    "It is flat and used to carry items.",
+                    "It organizes or transports small objects.",
+                    "It is a surface for holding or presenting."
+                ],
+                "orange": [
+                    "It is round and often eaten as a snack.",
+                    "It is juicy with a thick, textured skin.",
+                    "It is a citrus fruit rich in Vitamin C."
+                ]
+            }
+        },
+        "13": {
+            "class_name": ["microwave", "skateboard", "orange", "eraser", "lamp"],
+            "class_idx": [3, 15, 17, 22, 24],
+            "clue": {
+                "microwave": [
+                    "It is quick and warms your meals efficiently.",
+                    "It is a humming box for convenient heat transformations.",
+                    "It is a device manipulating molecules for thermal agitation."
+                ],
+                "skateboard": [
+                    "It is a board with wheels for playful motion.",
+                    "It is a balance tool for urban acrobatics.",
+                    "It is a platform navigating momentum and angular dynamics."
+                ],
+                "orange": [
+                    "It is round, juicy, and sweetly refreshing.",
+                    "It is a bright sphere offering citrus delight.",
+                    "It is a segmented container of tangy hydration."
+                ],
+                "eraser": [
+                    "It is soft and removes written marks from paper.",
+                    "It is a small block for correcting graphite traces.",
+                    "It is a tool reversing strokes by frictional abrasion."
+                ],
+                "lamp": [
+                    "It is bright and helps illuminate dark spaces.",
+                    "It is a fixture spreading controlled beams of light.",
+                    "It is a device transforming energy into photonic radiance."
+                ]
+            }
+        },
+        "14": {
+            "class_name": ["spoon", "basket", "calculator", "umbrella", "remote"],
+            "class_idx": [6, 11, 12, 19, 27],
+            "clue": {
+                "spoon": [
+                    "It is curved for holding liquid.",
+                    "It is essential for enjoying soup smoothly.",
+                    "It mirrors concave precision for culinary transfer."
+                ],
+                "basket": [
+                    "It is woven to carry items.",
+                    "It holds goods for storage or transport.",
+                    "It symbolizes hand-crafted containment and ventilation."
+                ],
+                "calculator": [
+                    "It is used to solve numbers quickly.",
+                    "It simplifies arithmetic in seconds.",
+                    "It transforms logic into quantified precision."
+                ],
+                "umbrella": [
+                    "It is used to shield from rain.",
+                    "It unfolds to create a dry haven.",
+                    "It arches fabric for atmospheric deflection."
+                ],
+                "remote": [
+                    "It is used to control devices wirelessly.",
+                    "It commands entertainment from a distance.",
+                    "It bridges infrared signals to electronic obedience."
+                ]
+            }
+        },
+        "15": {
+            "class_name": ["spoon", "pencil", "toothbrush", "tie", "umbrella"],
+            "class_idx": [6, 8, 9, 14, 19],
+            "clue": {
+                "spoon": [
+                    "It is a tool for moving liquids or solids.", 
+                    "It is often cupped and works alongside its counterparts.", 
+                    "It delivers sustenance in measured, concave portions."
+                ], 
+                "pencil": [
+                    "It is a tool for writing or drawing.", 
+                    "It leaves marks easily erased or altered.", 
+                    "It is a temporary medium with a sharpened core."
+                ], 
+                "toothbrush": [
+                    "It is a tool for cleaning small, hard surfaces.", 
+                    "It maintains hygiene with bristles and paste.", 
+                    "It combats decay with repetitive strokes and abrasive compounds."
+                ], 
+                "tie": [
+                    "It is an accessory worn around the neck.", 
+                    "It enhances formal appearances with decorative patterns.", 
+                    "It binds fabric in elongated knots for visual symmetry."
+                ], 
+                "umbrella": [
+                    "It is a shield against the elements.", 
+                    "It expands and collapses with a central axis.", 
+                    "It creates a mobile canopy of fabric and ribs."
+                ]
+            }
+        },
+        "16": {
+            "class_name": ["apple", "grape", "broccoli", "orange", "pineapple"],
+            "class_idx": [0, 5, 16, 17, 23],
+            "clue": {
+                "apple": [
+                    "It is a crunchy, handheld treat with a core.",
+                    "It is a symbol of knowledge, often red or green.",
+                    "It is a pomaceous fruit linked to cultural myths and health."
+                ],
+                "grape": [
+                    "It is a small, juicy orb found in clusters.",
+                    "It is pressed for juice or wine, thriving on vines.",
+                    "It is a botanical berry prized for its versatile cultivation."
+                ],
+                "broccoli": [
+                    "It is a green vegetable with a tree-like shape.",
+                    "It is a cruciferous stalk known for its florets and nutrients.",
+                    "It is an edible inflorescence of the Brassica oleracea species."
+                ],
+                "orange": [
+                    "It is a juicy citrus with a vibrant hue.",
+                    "It is a spherical fruit known for its tangy sweetness.",
+                    "It is a hesperidium, renowned for its vitamin-rich segments."
+                ],
+                "pineapple": [
+                    "It is a spiky fruit with sweet, golden flesh.",
+                    "It is a tropical treat with a crown and unique texture.",
+                    "It is a composite fruit derived from fused bromeliad flowers."
+                ]
+            }
+        },
+        "17": {
+            "class_name": ["cell phone", "skateboard", "eraser", "remote", "snowboard"],
+            "class_idx": [4, 15, 22, 27, 28],
+            "clue": {
+                "cell phone": [ 
+                    "It is a device for staying connected.", 
+                    "It is a pocket-sized hub for communication and information.", 
+                    "It is a versatile tool reshaping modern human interaction." 
+                ], 
+                "skateboard": [ 
+                    "It is a board with wheels for fun.", 
+                    "It is a platform for motion, tricks, and style.", 
+                    "It is a fusion of physics and urban artistry." 
+                ], 
+                "eraser": [ 
+                    "It is a tool for fixing writing mistakes.", 
+                    "It is a rubbery helper that undoes marks on paper.", 
+                    "It is a sculptor of second chances in graphite form." 
+                ], 
+                "remote": [ 
+                    "It is a controller for devices from afar.", 
+                    "It is a tool for invisible command and signal sending.", 
+                    "It is a bridge between human intent and electronic response." 
+                ], 
+                "snowboard": [ 
+                    "It is a board for gliding on snow.", 
+                    "It is a ride for thrills on winter slopes.", 
+                    "It is an instrument blending balance, speed, and frozen landscapes." 
+                ]
+            }
+        },
+        "18": {
+            "class_name": ["vase", "umbrella", "cup", "lamp", "bottle"],
+            "class_idx": [7, 19, 20, 24, 29],
+            "clue": {
+                "vase": [
+                    "It is a holder for natural decorative elements.",
+                    "It is designed to enhance aesthetics through organic displays.",
+                    "It is a hollow vessel bridging artistry and floral arrangements."
+                ],
+                "umbrella": [
+                    "It is a shield from falling droplets or sunlight.",
+                    "It is a portable canopy offering weather protection.",
+                    "It is a collapsible structure balancing function and fashion."
+                ],
+                "cup": [
+                    "It is a container for holding your favorite drinks.",
+                    "It is a vessel often paired with warmth or refreshment.",
+                    "It is a concave item uniting form, utility, and comfort."
+                ],
+                "lamp": [
+                    "It is a source of artificial brightness for dark spaces.",
+                    "It is a tool that blends light with design.",
+                    "It is a luminous medium for ambiance and visibility."
+                ],
+                "bottle": [
+                    "It is a vessel to keep liquids portable and secure.",
+                    "It is designed to store and transport diverse beverages.",
+                    "It is a cylindrical solution for containment and conservation."
+                ]
+            }
+        },
+        "19": {
+            "class_name": ["book", "microwave", "calculator", "tray", "oven"],
+            "class_idx": [2, 3, 12, 13, 26],
+            "clue": {
+                "book": [ 
+                    "It is a source of stories or knowledge.", 
+                    "It is a collection of pages bound together.", 
+                    "It is a repository of thoughts preserved in ink." 
+                ], 
+                "microwave": [ 
+                    "It is used to heat food quickly.", 
+                    "It is a box that uses waves to cook.", 
+                    "It is a device harnessing radiation for thermal energy." 
+                ], 
+                "calculator": [ 
+                    "It is used to solve math problems.", 
+                    "It is a tool for precise numerical operations.", 
+                    "It is a device translating logic into computed answers." 
+                ], 
+                "tray": [ 
+                    "It is used to carry or hold items.", 
+                    "It is a flat surface with raised edges.", 
+                    "It is a platform for organizing or presenting objects." 
+                ], 
+                "oven": [ 
+                    "It is used to bake or roast food.", 
+                    "It is an insulated chamber for heat-based cooking.", 
+                    "It is a cavity transforming energy into culinary artistry." 
+                ]
+            }
+        }
+    }
+}
