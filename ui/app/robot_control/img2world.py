@@ -29,7 +29,7 @@ class CalibBoard():
 
         return img    
 
-    def calculate_T_rc(self, pixel_x, pixel_y):
+    def calculate_T_rc(self):
 
         # Prepare object points for the checkerboard
         objp = np.zeros((self.checkerboard[0] * self.checkerboard[1], 3), np.float32)
@@ -65,10 +65,10 @@ class CalibBoard():
         # project 3D points to image plane
         imgpts, jac = cv2.projectPoints(self.axis, rvecs, tvecs, self.mtx, self.dist)
         img = self.draw(img, corners2, imgpts)
-        # cv2.circle(img, (pixel_x, pixel_y), 5, (0,0,255), 3)
+        #cv2.circle(img, (pixel_x, pixel_y), 5, (0,0,255), 3)
 
-        # cv2.imshow('img', img)
-        # cv2.waitKey(0)
+        #cv2.imshow('img', img)
+        #cv2.waitKey(0)
 
         # Calculate Transformation Matrix (Robot to Camera)
         T_rc = self.T_rb @ np.linalg.inv(T_cb)
@@ -76,16 +76,92 @@ class CalibBoard():
     
         return T_rc
     
+    def find_available_devices(max_devices=3):
+        available_devices = []
+ 
+        # cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)
+        cv2.setLogLevel(0)
+        for device_id in range(max_devices):
+            cap = cv2.VideoCapture(device_id)
+            print('----------------')
+            if cap.isOpened():  # 장치가 열렸다면, 사용 가능
+                available_devices.append(device_id)
+                cap.release()  # 장치를 닫아줍니다.
+ 
+        # cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_ERROR)
+        cv2.setLogLevel(3)
+ 
+        return available_devices
+
+    def take_picture(self):
+
+        camera_id=self.find_available_devices()
+
+        for cam in camera_id:
+
+            # 카메라 초기화
+            cap = cv2.VideoCapture(cam)
+
+            if not cap.isOpened():
+                print("카메라를 열 수 없습니다.")
+            else:
+                print("Open camera")
+                break
+
+        # 카메라 해상도 설정 (1280x720 예시)
+        desired_width = 640  # 원하는 해상도의 가로 크기
+        desired_height = 480 # 원하는 해상도의 세로 크기
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, desired_width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, desired_height)
+
+        # 설정된 해상도 확인
+        actual_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        actual_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        print(f"카메라 해상도 설정: {int(actual_width)}x{int(actual_height)}")
+
+        print("사진을 찍으려면 's' 키를 누르고, 종료하려면 'q' 키를 누르세요.")
+
+        # 프레임 캡처 루프
+        image_count = 0
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    print("프레임을 읽을 수 없습니다. 종료합니다.")
+                    break
+
+                # 프레임 표시
+                cv2.imshow("USB Camera", frame)
+
+                # 키 입력 대기
+                key = cv2.waitKey(1) & 0xFF
+
+                if key == ord('s'):  # 's' 키를 누르면 사진 저장
+                    image_count += 1
+                    image_path = "captured_image.jpg"
+                    cv2.imwrite(image_path, frame)
+                    print(f"사진이 저장되었습니다: {image_path}")
+
+                elif key == ord('q'):  # 'q' 키를 누르면 종료
+                    print("종료합니다.")
+                    break
+        finally:
+            # 자원 해제
+            cap.release()
+            cv2.destroyAllWindows()
+
+    def init_board(self):
+        self.take_picture()
+        T_rc=self.calculate_T_rc()
+        self.T_rc=T_rc
+
     
     def cam2robot(self,pixel_x, pixel_y):
         mtx=self.mtx
-        T_rc = self.calculate_T_rc(pixel_x, pixel_y)
+        #T_rc = self.calculate_T_rc(pixel_x, pixel_y)
         x_cam = (pixel_x - mtx[0, 2]) * self.z_cam / mtx[0, 0]
         y_cam = (pixel_y - mtx[1, 2]) * self.z_cam / mtx[1, 1]
         point_cam = np.array([x_cam, y_cam, self.z_cam, 1])
-        point_robot = T_rc @ point_cam
+        point_robot = self.T_rc @ point_cam
 
-        return point_robot[:3]
-    
-# board=CalibBoard()
-# print(board.cam2robot(389,170))
+        return point_robot
