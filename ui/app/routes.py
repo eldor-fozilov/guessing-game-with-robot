@@ -43,6 +43,7 @@ def detect_os():
     else:
         return "Unknown"
 
+
 current_os = detect_os()
 
 if torch.cuda.is_available():
@@ -59,7 +60,8 @@ if current_os == "macOS":
 
 # ==================================================================
 # [2] Set Resolutions
-RES_WIDTH, RES_HEIGHT = 640, 480
+TARGET_RES_WIDTH, TARGET_RES_HEIGHT = 640, 480
+CAMERA_RES_WIDTH, CAMERA_RES_HEIGHT = 1920, 1080
 # ==================================================================
 
 
@@ -86,7 +88,7 @@ print("TTS model loaded.")
 
 # ==================================================================
 # [4] Set GuessingBot
-use_robot = True
+use_robot = False
 
 if use_robot:
 
@@ -95,7 +97,7 @@ if use_robot:
 
     # Define model and data in mujoco
     urdf_path = './ui/app/robot_control/low_cost_robot/scene.xml'
-    usb_device_name = '/dev/tty.usbmodem58760435011'
+    usb_device_name = '/dev/tty.usbmodem58760435011'  # /dev/ttyACM0
 
     robot_model = mujoco.MjModel.from_xml_path(urdf_path)
     data = mujoco.MjData(robot_model)
@@ -110,8 +112,6 @@ if use_robot:
     guesser.move_to_home()
     real_robot._gripper_off()
 
-import threading
-import time
 
 def run_viewer(robot_model, data):
     """Function to launch the MuJoCo viewer."""
@@ -152,6 +152,16 @@ vlm_model = None
 vlm_tokenizer = None
 yolo_model = None
 yolo_world_model = None
+
+# YOLO model paths and configurations
+yolo_model_path = "models/yolo11s.pt"
+# 'n' for nano, 's' for small, 'm' for medium, 'l' for large, 'x' for extra large
+yolo_size = 's'
+# 's' for small, 'm' for medium, 'l' for large, 'x' for extra large
+yolo_world_size = 'l'
+yolo_world_model_path = "./YOLO-World/pretrained_weights/yolo_world_v2_l_obj365v1_goldg_pretrain_1280ft-9babe3f6.pth"
+yolo_world_model_config_path = "./YOLO-World/configs/pretrain/yolo_world_v2_l_vlpan_bn_2e-3_100e_4x8gpus_obj365v1_goldg_train_1280ft_lvis_minival.py"
+
 # ==================================================================
 
 
@@ -219,39 +229,45 @@ def camera_stream():
         detected_objects = []
 
         if current_pipeline == "YOLO and LLM":
-            results = yolo_model(frame, verbose=False)[0]
 
-            # 감지된 객체의 이름과 좌표 저장
-            for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
-                # 바운딩 박스 좌표 및 클래스 이름 추출
-                x1, y1, x2, y2 = map(int, box.tolist())
-                obj_name = results.names[int(cls.item())]
-
-                # 객체 정보를 딕셔너리로 저장
-                detected_objects.append({
-                    "name": obj_name,
-                    "coords": [x1, y1, x2, y2]
-                })
-
-            if not wrong_answer and last_llm_answer:
+            if not wrong_answer and last_llm_answer and last_select_object_coords:
                 # only show the selected object
-                detected_objects = [
-                    obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
+                # detected_objects = [
+                #     obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
+
+                label_text = last_llm_answer
+                detected_objects = [{'name': label_text,
+                                    'coords': last_select_object_coords}]
+
+            elif yolo_size in ['n', 's']:
+                results = yolo_model(frame, verbose=False)[0]
+
+                # 감지된 객체의 이름과 좌표 저장
+                for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
+                    # 바운딩 박스 좌표 및 클래스 이름 추출
+                    x1, y1, x2, y2 = map(int, box.tolist())
+                    obj_name = results.names[int(cls.item())]
+
+                    # 객체 정보를 딕셔너리로 저장
+                    detected_objects.append({
+                        "name": obj_name,
+                        "coords": [x1, y1, x2, y2]
+                    })
 
         elif current_pipeline == "VLM and YOLO World" and last_llm_answer and not wrong_answer:
-            # boxes, labels, label_texts, scores = yolo_world_detect(runner=yolo_world_model,
-            #                                                        object_description=last_llm_answer, input_image=frame)
 
-            # detected_objects = []
-            # for box, label, label_text, score in zip(boxes, labels, label_texts, scores):
-            #     x1, y1, x2, y2 = map(int, box)
-            #     detected_objects.append({
-            #         "name": label_text,
-            #         "coords": [x1, y1, x2, y2]
-            #     })
-            
-            label_text = last_llm_answer
-            detected_objects = [{'name': label_text, 'coords': last_select_object_coords}]
+            if yolo_world_size == 's':
+
+                boxes, labels, label_texts, scores = yolo_world_detect(runner=yolo_world_model,
+                                                                       object_description=last_llm_answer, input_image=frame)
+
+                detected_objects = []
+                for box, label, label_text, score in zip(boxes, labels, label_texts, scores):
+                    x1, y1, x2, y2 = map(int, box)
+                    detected_objects.append({
+                        "name": label_text,
+                        "coords": [x1, y1, x2, y2]
+                    })
 
         # YOLO 감지 결과를 프레임에 표시
         for obj in detected_objects:
@@ -273,7 +289,7 @@ def video_feed():
 @main.route("/generate_answer", methods=["POST"])
 def generate_answer():
     global camera_instance, last_llm_answer, last_llm_explanation, last_transcription, current_pipeline, last_select_object_coords, last_all_identified_objects  # buffer
-    global yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer, all_identified_objects
+    global yolo_model, yolo_world_model, llm_model, llm_tokenizer, vlm_model, vlm_tokenizer
     data = request.json
     clue = data.get("clue", "").strip()
     excluded_objects = data.get("rejectedObjects", [])
@@ -305,14 +321,18 @@ def generate_answer():
                 "coords": [x1, y1, x2, y2]
             })
 
+        if len(detected_objects) == 0:
+            return jsonify({"error": "No object detected."}), 400
+
         filtered_objects, unique_objects = process_detected_objects(
             excluded_objects, detected_objects)
 
         latency, selected_object, explanation = generate_llm_response(
             llm_model, llm_tokenizer, clue, unique_objects, device)
 
+        all_identified_objects = unique_objects
+
         if selected_object != "unknown":
-            all_identified_objects = unique_objects
 
             for obj_data in filtered_objects:
                 if isinstance(obj_data, dict) and obj_data["name"].lower() == selected_object.lower():
@@ -330,6 +350,9 @@ def generate_answer():
 
             boxes, labels, label_texts, scores = yolo_world_detect(
                 runner=yolo_world_model, object_description=selected_object, input_image=rgb_image)
+
+            if len(boxes) == 0:
+                return jsonify({"error": "No object detected."}), 400
 
             box = boxes[0]
             x1, y1, x2, y2 = map(int, box)
@@ -378,7 +401,7 @@ def select_solution():
 
     if solution == "YOLO and LLM":
         # Load the YOLO model
-        yolo_model = load_yolo_model(device="cpu")
+        yolo_model = load_yolo_model(model_path=yolo_model_path, device="cpu")
         print("YOLO model loaded.")
         # Load the LLM model
         llm_model, llm_tokenizer = load_llm_model(device=device)
@@ -388,7 +411,8 @@ def select_solution():
         vlm_model, vlm_tokenizer = load_vlm_model(device=device)
         print("VLM model loaded.")
         # Load the YOLO World model
-        yolo_world_model = load_yolo_world_model(device="cpu")
+        yolo_world_model = load_yolo_world_model(
+            model_path=yolo_world_model_path, config_path=yolo_world_model_config_path, device="cpu")
         print("YOLO World model loaded.")
     else:
         return jsonify({"error": "Invalid solution"}), 400
@@ -511,10 +535,10 @@ def control_robot():
     x1, y1, x2, y2 = last_select_object_coords
 
     # resize to the RES_WIDTH and RES_HEIGHT
-    x1 = int(x1 * RES_WIDTH / 1920)
-    y1 = int(y1 * RES_HEIGHT / 1080)
-    x2 = int(x2 * RES_WIDTH / 1920)
-    y2 = int(y2 * RES_HEIGHT / 1080)
+    x1 = int(x1 * TARGET_RES_WIDTH / CAMERA_RES_WIDTH)
+    y1 = int(y1 * TARGET_RES_HEIGHT / CAMERA_RES_HEIGHT)
+    x2 = int(x2 * TARGET_RES_WIDTH / CAMERA_RES_WIDTH)
+    y2 = int(y2 * TARGET_RES_HEIGHT / CAMERA_RES_HEIGHT)
 
     center_point_x = (x1 + x2) / 2
     center_point_y = (y1 + y2) / 2
@@ -522,10 +546,6 @@ def control_robot():
     print("Center point:", center_point_x, center_point_y)
 
     target_point = t.cam2robot(center_point_x, center_point_y)
-
-
-
- 
 
     # move the robot to the target point and pick / place the object
     # guesser.move_to_target()
@@ -537,8 +557,13 @@ def control_robot():
     # real_robot._gripper_off()
 
     # move the robot to the human contact point
-    #guesser.move_to_target(HUMAN_CONTACT_POINT)
+    # guesser.move_to_target(HUMAN_CONTACT_POINT)
 
     moved_to_target_point = True
 
     return jsonify({"status": "success"})
+
+
+@ main.route("/get_use_robot_status", methods=["GET"])
+def get_use_robot_status():
+    return jsonify({"use_robot": use_robot})

@@ -4,6 +4,19 @@ let rejectedObjects = [];
 let rejectedObject = null;
 let wrongAnswer = false;
 
+fetchUseRobotlStatus();
+
+async function fetchUseRobotlStatus() {
+    try {
+        const response = await fetch("/get_use_robot_status");
+        const data = await response.json();
+        useRobot = data.use_robot;
+        console.log(`Robot Use: ${useRobot ? "enabled" : "disabled"}`);
+    } catch (err) {
+        console.error("Error fetching Robot Use status:", err);
+    }
+}
+
 async function searchCameras() {
     try {
         const response = await fetch('/start_camera_search', { method: 'POST' });
@@ -100,7 +113,7 @@ async function generateAnswer() {
         return;
     }
 
-    document.getElementById("status").innerText = "Generating answers ...";
+    document.getElementById("status").innerText = "Generating answer ...";
     
     try {
         const response = await fetch("/generate_answer", {
@@ -134,6 +147,9 @@ async function generateAnswer() {
             document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data.x2 + ", " + data.y2 + "}";
         }
 
+
+        if (useRobot){
+
         // Contol Robot ----------------------------------------------------------
         const response2 = await fetch("/control_robot", {
             method: "POST",
@@ -147,6 +163,7 @@ async function generateAnswer() {
             document.getElementById("status").innerText = `Error: ${data2.error}`;
         }
         // ------------------------------------------------------------------------
+    }
 
     } catch (err) {
         console.error("Error generating answer:", err);
@@ -322,82 +339,29 @@ async function acceptDecision() {
 
 async function rejectDecision() {
     const answerOutput = document.getElementById("answer_output");
-    rejectedObject = answerOutput.textContent.split(": ")[1].trim();
-    console.log("rejectedObject ", rejectedObject);
-    // set wrongAnswer to True
+    rejectedObject = answerOutput.textContent.split(": ")[1]?.trim();
+    console.log("rejectedObject:", rejectedObject);
+    // Set wrongAnswer to true
     wrongAnswer = true;
 
-    // make a new function to send the wrongAnswer to the server
+    // Send the wrongAnswer status to the server
     await fetch("/wrong_answer_status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ wrongAnswer }),
-        });    
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wrongAnswer }),
+    });
 
     if (!rejectedObject) {
         alert("No object to reject. Generate an answer first!");
         return;
     }
 
-    // 거부된 객체를 배열에 추가
+    // Add the rejected object to the array if it's not already there
     if (!rejectedObjects.includes(rejectedObject)) {
         rejectedObjects.push(rejectedObject);
     }
 
     console.log("Rejected Objects Array:", rejectedObjects);
 
-    try {
-        document.getElementById("status").innerText = "Regenerating answer ...";
-        
-        const clue = document.getElementById("clue_input").value.trim();
-        if (!clue) {
-            alert("Please enter a clue before rejecting.");
-            return;
-        }
-
-        const response = await fetch("/generate_answer", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clue, exclude: rejectedObjects }),
-        });
-        const data2 = await response.json();
-
-        if (response.ok) {
-            // 새로운 답변 및 감지된 객체 업데이트
-            document.getElementById("answer_output").textContent = `Answer: ${data2.answer}`;
-            document.getElementById("latency_output").textContent = `Latency: ${data2.latency}`;
-
-            document.getElementById("status").innerText = "Answer regenerated!";
-            
-            if (!data2.positions) {
-                document.getElementById("point0").innerText = "No matching object found.";
-                objectList.appendChild(li);
-            } else {
-                // 매칭된 객체가 있을 때
-                document.getElementById("point0").innerText = "Point 0 {x1, y1} : {" + data2.x1 + ", " + data2.y1 + "}";
-                document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data2.x2 + ", " + data2.y2 + "}";
-            }
-
-            // Contol Robot ----------------------------------------------------------
-            const response2 = await fetch("/control_robot", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ point0, point1 }),
-            });
-            const data3 = await response2.json();
-            if (response2.ok) {
-                document.getElementById("status").innerText = "Robot is moving!";
-            } else {
-                document.getElementById("status").innerText = `Error: ${data3.error}`;
-            }
-            // ------------------------------------------------------------------------
-            
-        } else {
-            document.getElementById("status").innerText = `Error: ${data3.error}`;
-        }
-    } catch (err) {
-        console.error("Error regenerating answer:", err);
-        // document.getElementById("status").innerText = "Error regenerating answer!";
-    }
-    
+    alert("The answer was rejected. You can record / enter a new clue or click the 'Generate Answer' button to regenerate the answer.");
 }

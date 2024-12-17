@@ -7,8 +7,8 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
 
 
-def load_yolo_model(model_name="models/yolo11s.pt", device='cpu'):
-    yolo_model = YOLO(model_name)
+def load_yolo_model(model_path="models/yolo11s.pt", device='cpu'):
+    yolo_model = YOLO(model_path)
     yolo_model.fuse()
     yolo_model.to(device)
     return yolo_model
@@ -18,9 +18,11 @@ def load_llm_model(model_name="meta-llama/Llama-3.2-1B-Instruct", device="cpu"):
     llm_tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     if device == "mps":
-        llm_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, device_map=device)
+        llm_model = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype=torch.float16, device_map=device)
     else:
-        llm_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", device_map=device)
+        llm_model = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype="auto", device_map=device)
 
     llm_model.eval()
 
