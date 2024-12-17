@@ -88,7 +88,7 @@ print("TTS model loaded.")
 
 # ==================================================================
 # [4] Set GuessingBot
-use_robot = False
+use_robot = True
 
 if use_robot:
 
@@ -154,9 +154,9 @@ yolo_model = None
 yolo_world_model = None
 
 # YOLO model paths and configurations
-yolo_model_path = "models/yolo11s.pt"
+yolo_model_path = "models/yolo11l.pt"
 # 'n' for nano, 's' for small, 'm' for medium, 'l' for large, 'x' for extra large
-yolo_size = 's'
+yolo_size = 'l'
 # 's' for small, 'm' for medium, 'l' for large, 'x' for extra large
 yolo_world_size = 'l'
 yolo_world_model_path = "./YOLO-World/pretrained_weights/yolo_world_v2_l_obj365v1_goldg_pretrain_1280ft-9babe3f6.pth"
@@ -500,11 +500,6 @@ def wrong_answer_status():
 
     if wrong_answer and use_robot and moved_to_target_point:
         guesser.if_wrong()
-        # move the robot to designated point and throw the object
-
-        # THROW_POINT = [0.15, 0.15, 0.1]  # define the throw point
-        # guesser.move_to_target(THROW_POINT)
-        # real_robot._gripper_off()  # drop the object
 
         # return to the home position
         # guesser.move_to_home()
@@ -550,11 +545,6 @@ def control_robot():
     # move the robot to the target point and pick / place the object
     # guesser.move_to_target()
     guesser.pick_and_ask(target_point)
-
-    # HUMAN_CONTACT_POINT = None  # define the human contact point
-
-    # guesser.move_to_home()
-    # real_robot._gripper_off()
 
     # move the robot to the human contact point
     # guesser.move_to_target(HUMAN_CONTACT_POINT)
