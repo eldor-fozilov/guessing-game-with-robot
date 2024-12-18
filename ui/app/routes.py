@@ -501,7 +501,7 @@ def speak_llm_output():
 
 @ main.route('/wrong_answer_status', methods=['POST'])
 def wrong_answer_status():
-    global wrong_answer, moved_to_target_point, guesser, real_robot, use_robot
+    global wrong_answer, moved_to_target_point, guesser, real_robot, use_robot, last_select_object_coords, last_llm_answer
     wrong_answer = request.json.get("wrongAnswer", False)
 
     print("Wrong answer flag set to:", wrong_answer)
@@ -520,6 +520,9 @@ def wrong_answer_status():
         guesser.move_to_home()
 
         moved_to_target_point = False
+    
+    last_select_object_coords = None # reset the selected object coordinates
+    last_llm_answer = None # reset the last LLM answer
 
     return jsonify({"status": "wrong answer flag set"})
 
