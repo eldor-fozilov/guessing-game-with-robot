@@ -106,7 +106,6 @@ if use_robot:
     sim_robot = SimulatedRobot(robot_model, data)
     real_robot = Robot(device_name=usb_device_name)
     guesser = GuessingBot(sim_robot, real_robot, end_effector=end_effector)
-    print("Guesser bot initialized.aaaaaaaaaaaaaaaaaaaaaaaa")
     t = CalibBoard()
 
     # Move real robot to home position
@@ -297,6 +296,9 @@ def generate_answer():
     clue = data.get("clue", "").strip()
     excluded_objects = data.get("rejectedObjects", [])
 
+        
+    print("Excluded Objects:", excluded_objects)
+
     if not clue:
         if last_transcription and last_transcription.strip():
             clue = last_transcription.strip()
@@ -329,8 +331,7 @@ def generate_answer():
 
         filtered_objects, unique_objects = process_detected_objects(
             excluded_objects, detected_objects)
-
-        print("Excluded Objects:", excluded_objects)
+        
         print("Unique Objects:", unique_objects)
         
 

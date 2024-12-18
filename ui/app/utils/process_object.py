@@ -1,8 +1,6 @@
 
 def process_detected_objects(exclude_objects, detected_objects):
 
-    print("Ex Objects:", exclude_objects)
-
     # flattened_objects = [
     #     obj for sublist in detected_objects for obj in sublist]
 

@@ -119,7 +119,7 @@ async function generateAnswer() {
         const response = await fetch("/generate_answer", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clue }),
+            body: JSON.stringify({ clue, rejectedObjects}),
         });
 
         if (!response.ok) {
@@ -147,7 +147,6 @@ async function generateAnswer() {
             document.getElementById("point1").innerText = "Point 1 {x2, y2} : {" + data.x2 + ", " + data.y2 + "}";
         }
 
-        console.log("Rejected Objects Arrayqwef wqflknw;fnwenmfw:", rejectedObjects);
         if (useRobot){
 
         // Contol Robot ----------------------------------------------------------
