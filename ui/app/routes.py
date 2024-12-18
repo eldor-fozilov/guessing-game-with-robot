@@ -106,6 +106,7 @@ if use_robot:
     sim_robot = SimulatedRobot(robot_model, data)
     real_robot = Robot(device_name=usb_device_name)
     guesser = GuessingBot(sim_robot, real_robot, end_effector=end_effector)
+    print("Guesser bot initialized.aaaaaaaaaaaaaaaaaaaaaaaa")
     t = CalibBoard()
 
     # Move real robot to home position
@@ -228,18 +229,20 @@ def camera_stream():
 
         detected_objects = []
 
+
+        if not wrong_answer and last_llm_answer and last_select_object_coords:
+            # only show the selected object
+            # detected_objects = [
+            #     obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
+
+            label_text = last_llm_answer
+            detected_objects = [{'name': label_text,
+                                'coords': last_select_object_coords}]
+
         if current_pipeline == "YOLO and LLM":
 
-            if not wrong_answer and last_llm_answer and last_select_object_coords:
-                # only show the selected object
-                # detected_objects = [
-                #     obj for obj in detected_objects if obj["name"].lower() == last_llm_answer.lower()]
 
-                label_text = last_llm_answer
-                detected_objects = [{'name': label_text,
-                                    'coords': last_select_object_coords}]
-
-            elif yolo_size in ['n', 's']:
+            if yolo_size in ['n', 's', 'l']:
                 results = yolo_model(frame, verbose=False)[0]
 
                 # 감지된 객체의 이름과 좌표 저장
@@ -274,7 +277,7 @@ def camera_stream():
             x1, y1, x2, y2 = obj["coords"]
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(frame, obj["name"], (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
 
         # 프레임 반환
         _, encoded_frame = cv2.imencode('.jpg', frame)
@@ -326,6 +329,10 @@ def generate_answer():
 
         filtered_objects, unique_objects = process_detected_objects(
             excluded_objects, detected_objects)
+
+        print("Excluded Objects:", excluded_objects)
+        print("Unique Objects:", unique_objects)
+        
 
         latency, selected_object, explanation = generate_llm_response(
             llm_model, llm_tokenizer, clue, unique_objects, device)
@@ -544,6 +551,7 @@ def control_robot():
 
     # move the robot to the target point and pick / place the object
     # guesser.move_to_target()
+    print("Target point:", target_point)
     guesser.pick_and_ask(target_point)
 
     # move the robot to the human contact point

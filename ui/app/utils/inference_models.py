@@ -22,7 +22,7 @@ from torchvision.transforms.functional import to_tensor
 
 def generate_llm_response(model, tokenizer, clue, detected_objects, device='cpu'):
 
-    user_prompt = f"""You are an assistant whose task is to identify the correct object from this list {detected_objects} that aligns best with the following clue: '{clue}', which can be given in Korean or English.
+    user_prompt = f"""You are an assistant whose task is to identify the correct object from this list {detected_objects} that aligns best with the following clue: '{clue}'.
     Take a moment to think about each object's properties, considering how the clue relates to them, directly or indirectly.
     Provide your response in the following format:
 
@@ -108,7 +108,7 @@ def generate_llm_response(model, tokenizer, clue, detected_objects, device='cpu'
 
 
 def generate_vlm_response(model, tokenizer, image, clue, excluded_objects, device='cpu'):
-    user_prompt = f'''You are an assistant whose task is to analyze the given image and the following clue: '{clue}', which can be given in Korean or English.
+    user_prompt = f'''You are an assistant whose task is to analyze the given image and the following clue: '{clue}'.
     
     1. Identify and list all the objects present in the image.
     2. From the list of identified objects, select the one that best aligns with the clue, while ignoring these excluded objects if present: {excluded_objects}.

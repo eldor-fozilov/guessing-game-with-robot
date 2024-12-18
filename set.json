@@ -1,0 +1,339 @@
+{
+    "class": {
+        "0": "orange",
+        "1": "cup",
+        "2": "teddy bear",
+        "3": "scissors",
+        "4": "apple",
+        "5": "broccoli",
+        "6": "pineapple",
+        "7": "cactus",
+        "8": "zebra",
+        "9": "giraffe",
+        "10": "clock",
+        "11": "cat"
+    },
+    "set": {
+        "0": {
+            "class_name": ["orange", "apple"],
+            "class_idx": [0, 4],
+            "clue": {
+                "orange": [
+                    "It is a round, citrus fruit with a bright hue.", 
+                    "It is peeled to reveal segments full of tangy juice.", 
+                    "It grows in groves, its name echoing its color."
+                ],
+                "apple": [
+                    "It is a crisp fruit often found in lunchboxes.", 
+                    "It comes in many colors and keeps the doctor away.", 
+                    "It tempted knowledge in myths and fuels innovation today."
+                ]
+            }
+        },
+        "1": {
+            "class_name": ["orange", "giraffe"],
+            "class_idx": [0, 9],
+            "clue": {
+                "orange": [
+                    "It is round and bright like the morning sun.", 
+                    "It is peeled to reveal sweet, juicy sections.", 
+                    "It is nature’s citrus globe, segmented for easy sharing."
+                ], 
+                "giraffe": [
+                    "It is tall and towers above all it sees.", 
+                    "It is spotted and grazes where trees meet the sky.", 
+                    "It is a gentle giant, reaching leaves others cannot."
+                ]
+            }
+        },
+        "2": {
+            "class_name": ["cup", "teddy bear"],
+            "class_idx": [1, 2],
+            "clue": {
+                "cup": [
+                    "It is a small vessel that holds liquids.", 
+                    "It is used for sipping morning warmth or evening calm.", 
+                    "It carries comfort in measured, fragile volumes."
+                ],
+                "teddy bear": [
+                    "It is a soft companion for comfort and hugs.", 
+                    "It provides quiet support through childhood's sleepless nights.", 
+                    "It holds memories stitched into its fabric over time."
+                ]
+            }
+        },
+        "3": {
+            "class_name": ["cup", "pineapple"],
+            "class_idx": [1, 6],
+            "clue": {
+                "cup": [
+                    "It is a vessel for holding liquid.", 
+                    "It is often ceramic, metal, or plastic for drinking.", 
+                    "It embraces warmth and coolness, a silent companion to thirst."
+                ],
+                "pineapple": [
+                    "It is a tropical fruit with a rough exterior.", 
+                    "It is spiky outside but sweet and juicy within.", 
+                    "It is nature’s golden crown, hiding a tangy sweetness."
+                ]
+            }
+        },
+        "4": {
+            "class_name": ["cup", "giraffe"],
+            "class_idx": [1, 9],
+            "clue": {
+                "cup": [
+                    "It is something that holds what quenches your thirst.", 
+                    "It is designed to carry liquids in a small form.",
+                    "It is a vessel shaped for containment, often cradled in hands."
+                ],
+                "giraffe": [
+                    "It is a creature known for reaching where others cannot.", 
+                    "It is an animal with a tower-like presence on four legs.", 
+                    "It is nature’s lofty sentinel, adorned with a patchwork coat."
+                ]
+            }
+        },
+        "5": {
+            "class_name": ["cactus", "clock"],
+            "class_idx": [7, 10],
+            "clue": {
+                "cactus": [
+                    "It is a plant that thrives with minimal care.",
+                    "It is adorned with spines to protect its water.",
+                    "It is a desert survivor with an arid adaptation."
+                ],
+
+                "clock": [
+                    "It is a tool that tracks the passing of time.",
+                    "It is a face that never stops moving its hands.",
+                    "It is a rhythm keeper governed by precision and motion."
+                ]
+            }
+        },
+        "6": {
+            "class_name": ["zebra", "clock"],
+            "class_idx": [8, 10],
+            "clue": {
+                "zebra": [
+                    "It is striped and grazes on open lands.",
+                    "It is a wild animal with black and white contrast.",
+                    "It is nature's barcode roaming across grassy plains."
+                ],
+                "clock": [
+                    "It is a device that shows the passage of time.",
+                    "It is a silent guide marking every moment in life.",
+                    "It is the unseen keeper of measured, fleeting existence."
+                ]
+            }
+        },
+        "7": {
+            "class_name": ["giraffe", "clock"],
+            "class_idx": [9, 10],
+            "clue": {
+                "giraffe": [
+                    "It is tall and reaches where others cannot.", 
+                    "It is a spotted creature surveying from great heights.", 
+                    "It thrives on leaves most cannot reach, standing serene and slow."
+                ],
+                "clock": [
+                    "It is a tool that measures passing moments.", 
+                    "It keeps rhythm for lives in constant motion.", 
+                    "It marks fleeting time with hands moving ceaselessly in circles."
+                ]
+            }
+        },
+        "8": {
+            "class_name": ["broccoli", "cat"],
+            "class_idx": [5, 11],
+            "clue": {
+                "broccoli": [
+                    "It is green and found on dinner plates.",
+                    "It is a tree-like vegetable with a crunchy bite.",
+                    "It is a cruciferous plant, rich in vitamins and fiber."
+                ],
+                "cat": [
+                    "It is soft and often purrs when happy.",
+                    "It is a nimble creature with sharp instincts.",
+                    "It is a solitary, agile mammal revered across cultures."
+                ]
+            }
+        },
+        "9": {
+            "class_name": ["pineapple", "cat"],
+            "class_idx": [6, 11],
+            "clue": {
+                "pineapple": [
+                    "It is a spiky fruit with a sweet center.", 
+                    "It is tropical, rough outside, but golden inside.", 
+                    "It is a layered crown atop a patterned, prickly orb."
+                ],
+                "cat": [
+                    "It is a soft creature that loves to nap.", 
+                    "It is agile, independent, and purrs when content.", 
+                    "It is a shadowy hunter with eyes that see in dusk."
+                ]
+            }
+        },
+        "10": {
+            "class_name": ["cactus", "cat"],
+            "class_idx": [7, 11],
+            "clue": {
+                "cactus": [
+                    "It is a plant that thrives without much water.",
+                    "It is a spiky guardian of arid landscapes.",
+                    "It is nature's reservoir, armored for survival in extremes."
+                ],
+                "cat": [
+                    "It is a small companion that often curls up to sleep.",
+                    "It is an independent creature with graceful, silent movements.",
+                    "It is a domestic enigma, adored for aloof charm."
+                ]
+            }
+        },
+        "11": {
+            "class_name": ["giraffe", "cat"],
+            "class_idx": [9, 11],
+            "clue": {
+                "giraffe": [
+                    "It is tall and reaches where others cannot.", 
+                    "It is spotted and dines high among the trees.", 
+                    "It is nature's quiet observer with a neck of heights."
+                ],
+                "cat": [
+                    "It is small and naps wherever it pleases.", 
+                    "It is agile, independent, and a silent companion.", 
+                    "It is a graceful presence with eyes that see all."
+                ]
+            }
+        },
+        "12": {
+            "class_name": ["teddy bear", "scissors"],
+            "class_idx": [2, 3],
+            "clue": {
+                "teddy bear": [
+                    "It is soft and comforting.", 
+                    "It is a companion for dreams.", 
+                    "It is stitched to hold memories close."
+                ], 
+                "scissors": [
+                    "It is sharp and divides things.", 
+                    "It is the tool for clean separation.", 
+                    "It is a pivoted device for precise cuts."
+                ]
+            }
+        },
+        "13": {
+            "class_name": ["scissors", "pineapple"],
+            "class_idx": [3, 6],
+            "clue": {
+                "scissors": [
+                    "It is sharp and opens and closes.", 
+                    "It divides paper with precision and ease.", 
+                    "It dances in pairs, slicing through edges effortlessly."
+                ],
+                "pineapple": [
+                    "It is rough outside and sweet inside.", 
+                    "It wears a crown and hides golden treasures.", 
+                    "It blends spiky armor with tropical indulgence."
+                ]
+            }
+        },
+        "14": {
+            "class_name": ["apple", "broccoli"],
+            "class_idx": [4, 5],
+            "clue": {
+                "apple": [
+                    "It is a round, sweet bite of nature's gift.",
+                    "It is a crisp snack often found in lunch boxes.",
+                    "It is a fruit symbolizing knowledge, health, and temptation."
+                ],
+                "broccoli": [
+                    "It is a small green tree on your dinner plate.",
+                    "It is a crunchy vegetable praised for its nutrients.",
+                    "It is a floret-rich plant often steamed or avoided."
+                ]
+            }
+        },
+        "15": {
+            "class_name": ["broccoli", "pineapple"],
+            "class_idx": [5, 6],
+            "clue": {
+                "broccoli": [
+                    "It is green and eaten for health.", 
+                    "It is a tree-like vegetable rich in nutrients.", 
+                    "It is a cruciferous plant loved or avoided on plates."
+                ],
+                "pineapple": [
+                    "It is spiky outside and sweet inside.", 
+                    "It is a tropical fruit with a crown.", 
+                    "It is a fibrous treat symbolizing hospitality and summer."
+                ]
+            }
+        },
+        "16": {
+            "class_name": ["broccoli", "zebra"],
+            "class_idx": [5, 8],
+            "clue": {
+                "broccoli": [
+                    "It is a tree-like food on your plate.", 
+                    "It is a green cluster of edible tiny buds.", 
+                    "It is nature's nutrient-rich, fractal-patterned vegetable."
+                ],
+                "zebra": [
+                    "It is a striped animal often seen in fields.", 
+                    "It is a black-and-white creature from distant plains.", 
+                    "It is nature’s barcode running across African landscapes."
+                ]
+            }
+        },
+        "17": {
+            "class_name": ["broccoli", "giraffe"],
+            "class_idx": [5, 9],
+            "clue": {
+                "broccoli": [
+                    "It is green and often found on dinner plates.", 
+                    "It is a tree-like vegetable full of nutrients.", 
+                    "It is a cruciferous floret often disliked by children."
+                ],
+                "giraffe": [
+                    "It is tall and has a long neck.", 
+                    "It is a spotted creature grazing where trees are high.", 
+                    "It is the tallest land animal in the savanna."
+                ]
+            }
+        },
+        "18": {
+            "class_name": ["pineapple", "cactus"],
+            "class_idx": [6, 7],
+            "clue": {
+                "pineapple": [
+                    "It is a spiky fruit with a sweet core.", 
+                    "It is tropical, refreshing, and wears a rough armor.", 
+                    "It is nature's geometric puzzle with a juicy, golden heart."
+                ],
+                "cactus": [
+                    "It is a green plant that thrives in dry places.", 
+                    "It is spiny, resilient, and stores life within itself.", 
+                    "It is a desert sentinel, patient and unyielding in time."
+                ]
+            }
+        },
+        "19": {
+            "class_name": ["cactus", "zebra"],
+            "class_idx": [7, 8],
+            "clue": {
+                "cactus": [
+                    "It is green and thrives with little care.", 
+                    "It is spiky and survives in harsh, dry places.", 
+                    "It is a desert dweller that stores life within."
+                ],
+                "zebra": [
+                    "It is striped and roams in open fields.", 
+                    "It is a social grazer with bold black and white.", 
+                    "It is nature’s barcode blending into the wild herd."
+                ]
+            }
+        }
+    }
+}

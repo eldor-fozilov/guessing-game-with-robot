@@ -237,7 +237,7 @@ class Robot:
             self._set_position_control()
         for i, motor_id in enumerate(self.servo_ids):
             if motor_id == 6:
-                action_temp[i] = 2200
+                action_temp[i] = 2300
             else:
                 action_temp[i] = self.read_position()[i]
             data_write = [DXL_LOBYTE(DXL_LOWORD(action_temp[i])),

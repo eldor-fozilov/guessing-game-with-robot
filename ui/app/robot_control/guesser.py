@@ -24,36 +24,35 @@ class GuessingBot():
 
 
 
-    def pick_and_place(self, target_point, viewer=None):
-        goal_point = [target_point[0], target_point[1] + 0.02, 0.08]
-        # print("goal_point: ", goal_point)
-        self.move_to_target(goal_point, v=viewer)
-        # self.going_down()
-        self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
-        self.real_robot._gripper_on()
-        # self.going_up()
-        self.move_to_target([goal_point[0], goal_point[1], 0.1], v=viewer)
-        # self.move_to_goal()
-        self.move_to_target([0.15, 0.15, 0.1], v=viewer)
-        self.real_robot._gripper_off()
-        self.move_to_home()
+    # def pick_and_place(self, target_point, viewer=None):
+    #     goal_point = [target_point[0], target_point[1] + 0.02, 0.08]
+    #     print("goal_point: ", goal_point)
+    #     self.move_to_target(goal_point, v=viewer)
+    #     # self.going_down()
+    #     self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
+    #     self.real_robot._gripper_on()
+    #     # self.going_up()
+    #     self.move_to_target([goal_point[0], goal_point[1], 0.1], v=viewer)
+    #     # self.move_to_goal()
+    #     self.move_to_target([0.15, 0.15, 0.1], v=viewer)
+    #     self.real_robot._gripper_off()
+    #     self.move_to_home()
 
 
 
     def pick_and_ask(self, target_point, viewer=None):
-        goal_point = [target_point[0], target_point[1] + 0.02, 0.08]
-        # print("goal_point: ", goal_point)
+        goal_point = [target_point[0], target_point[1]+0.02, 0.08]
+        # goal_point = [0.1, 0.1, 0.08]
+        print("goal_point: ", goal_point)
         self.move_to_target(goal_point, v=viewer)
-        # self.going_down()
         self.move_to_target([goal_point[0], goal_point[1], 0.02], v=viewer)
         self.real_robot._gripper_on()
-        # self.going_up()
-        self.move_to_target([goal_point[0], goal_point[1], 0.1], v=viewer)
+        self.move_to_target([goal_point[0], goal_point[1], 0.09], v=viewer)
         self.move_to_goal()
 
 
     def if_wrong(self, viewer=None):
-        self.move_to_target([0.15, 0.15, 0.1], v=viewer)
+        self.move_to_target([0.15, 0.08, 0.08], v=viewer)
         self.real_robot._gripper_off()
         self.move_to_home()
 
@@ -68,8 +67,8 @@ class GuessingBot():
 
 
 
-    def move_to_home(self, steps=300): # 150
-        HOME = np.array([2048, 2048, 2048+1000, 1024, 2048, 2048])
+    def move_to_home(self, steps=200): # 150
+        HOME = np.array([2048, 2048, 2048+1000, 2000, 2048, 2048])
         pwm = np.array(self.real_robot.read_position())
         # print("Move to home pose.")
         smooth_traj = np.linspace(pwm, HOME, steps)
@@ -143,15 +142,15 @@ class GuessingBot():
 
                     self.sim_robot.d.qpos[:6] = self.sim_robot._pwm2pos(cur_pwm)
                     mujoco.mj_step(self.sim_robot.m, self.sim_robot.d)
-                    # v.sync()
 
                     # Calculate error
                     current_point = self.sim_robot.d.geom_xpos[self.body_id]
                     error = np.linalg.norm(target_point - current_point)
                     # print(f"Error: {error}")
-                    if error < 0.035:
+                    if error < 0.05:
                         pid = False
                         stop_flag = True
+        time.sleep(0.5)
 
 
 

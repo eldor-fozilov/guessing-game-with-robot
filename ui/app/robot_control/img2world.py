@@ -10,15 +10,16 @@ class CalibBoard():
                             [0.0,    0.0,               1.0]])
             
         self.dist=np.array([[0.0, 0.0, 0.0, 0.0, 0.0]])
-        self.z_cam=0.418
-        self.T_rb = np.array([[ 0, 1,  0,  -0.17],
-                            [   1, 0,  0,  0.06],
+        self.z_cam=0.41
+        self.T_rb = np.array([[ 0, -1,  0,  -0.15],
+                            [   -1, 0,  0,  0.15],
                             [   0, 0, -1,    0.0],
                             [   0, 0,  0,   1.0]])
             
-        self.square_size=0.03
+        self.square_size=0.028
         self.axis = np.float32([[0.03, 0, 0], [0, 0.03, 0], [0, 0, 0.03]]).reshape(-1, 3)
         self.image="./ui/app/robot_control/captured_image.jpg"
+        self.init_board()
 
     def draw(self, img, corners, imgpts):  ### Rearrange from BGR to RGB order ###
         c = corners[0].ravel()
@@ -67,8 +68,8 @@ class CalibBoard():
         img = self.draw(img, corners2, imgpts)
         #cv2.circle(img, (pixel_x, pixel_y), 5, (0,0,255), 3)
 
-        #cv2.imshow('img', img)
-        #cv2.waitKey(0)
+        # cv2.imshow('img', img)
+        # cv2.waitKey(0)
 
         # Calculate Transformation Matrix (Robot to Camera)
         T_rc = self.T_rb @ np.linalg.inv(T_cb)
@@ -76,12 +77,12 @@ class CalibBoard():
     
         return T_rc
     
-    def find_available_devices(max_devices=3):
+    def find_available_devices(self, max_devices=4):
         available_devices = []
  
         # cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)
         cv2.setLogLevel(0)
-        for device_id in range(max_devices):
+        for device_id in range(max_devices-1):
             cap = cv2.VideoCapture(device_id)
             print('----------------')
             if cap.isOpened():  # 장치가 열렸다면, 사용 가능
@@ -124,27 +125,26 @@ class CalibBoard():
         # 프레임 캡처 루프
         image_count = 0
         try:
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    print("프레임을 읽을 수 없습니다. 종료합니다.")
-                    break
+            # while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("프레임을 읽을 수 없습니다. 종료합니다.")
 
-                # 프레임 표시
-                cv2.imshow("USB Camera", frame)
+            # 프레임 표시
+            # cv2.imshow("USB Camera", frame)
 
-                # 키 입력 대기
-                key = cv2.waitKey(1) & 0xFF
+            # 키 입력 대기
+            # key = cv2.waitKey(1) & 0xFF
 
-                if key == ord('s'):  # 's' 키를 누르면 사진 저장
-                    image_count += 1
-                    image_path = "captured_image.jpg"
-                    cv2.imwrite(image_path, frame)
-                    print(f"사진이 저장되었습니다: {image_path}")
+            # if key == ord('s'):  # 's' 키를 누르면 사진 저장
+            #     image_count += 1
+            image_path = "./ui/app/robot_control/captured_image.jpg"
+            cv2.imwrite(image_path, frame)
+            print(f"사진이 저장되었습니다: {image_path}")
 
-                elif key == ord('q'):  # 'q' 키를 누르면 종료
-                    print("종료합니다.")
-                    break
+    #         elif key == ord('q'):  # 'q' 키를 누르면 종료
+    #             print("종료합니다.")
+    #             break
         finally:
             # 자원 해제
             cap.release()
