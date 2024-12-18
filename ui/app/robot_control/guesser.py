@@ -79,7 +79,7 @@ class GuessingBot():
         curr_pos = self.sim_robot._pwm2pos(curr_pwm)
         self.sim_robot.d.qpos[:6] = curr_pos
         mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
-
+        time.sleep(0.5)
 
 
     def move_to_target(self, target_point, v=None, steps=100, stop_iter=10000):
@@ -166,7 +166,7 @@ class GuessingBot():
             curr_pos = self.sim_robot._pwm2pos(curr_pwm)
             self.sim_robot.d.qpos[:6] = curr_pos
             mujoco.mj_forward(self.sim_robot.m,self.sim_robot.d)
-
+        time.sleep(0.5)
 
     def going_down(self, steps=100):
         pwm = np.array(self.real_robot.read_position())

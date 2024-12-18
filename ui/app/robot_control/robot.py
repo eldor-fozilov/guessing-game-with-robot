@@ -105,7 +105,7 @@ class Robot:
             torque.append(t)
         return torque
     
-    def read_velocity(self, tries=5):
+    def read_velocity(self, tries=20):
         """
         Reads the joint velocities of the robot.
         :return: list of joint velocities,
