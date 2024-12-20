@@ -10,3 +10,4 @@
 /ui/models/
 *.webassets-cache
 *.wav
+ui/app/robot_control/captured_image.jpg

@@ -122,6 +122,9 @@ class GuessingBot():
                     print(f"[Control] Converged at step {step} with error: {error}")
                     stop_flag = True
                     break
+                # elif abs(error - prev_error) <= 1e-6:
+                #     print(f"[Control] Stuck at step {step} with error: {error}")
+                #     continue
 
                 prev_error = error
                 step += 1
