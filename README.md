@@ -1,7 +1,11 @@
 ## Guessing Game with Robot Arm
 
+#### Team 3
+Eldor Fozilov, Gahyeon Shim, Minji Kim, Seongjae Lee, Sunhong Ahn, and Youngbin Ki
+
+
 ### Demonstration Video
-<iframe width="1280" height="720" src="https://www.youtube.com/embed/iiVfGvJUs00" title="Demonstration of Guessing Game" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Video Label](http://img.youtube.com/vi/iiVfGvJUs00/0.jpg)](https://youtu.be/iiVfGvJUs00)
 
 #### Environment Installation Guideline
 
