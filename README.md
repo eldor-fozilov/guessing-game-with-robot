@@ -1,7 +1,7 @@
 ## Guessing Game with Robot Arm
 
 ### Demonstration Video
-<iframe width="560" height="315" src="https://www.youtube.com/embed/iiVfGvJUs00" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="1280" height="720" src="https://www.youtube.com/embed/iiVfGvJUs00" title="Demonstration of Guessing Game" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 #### Environment Installation Guideline
 
