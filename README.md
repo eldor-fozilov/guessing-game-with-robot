@@ -1,6 +1,6 @@
 ## Guessing Game with Robot Arm
 
-#### Team 3
+#### Team
 Eldor Fozilov, Gahyeon Shim, Minji Kim, Seongjae Lee, Sunhong Ahn, and Youngbin Ki
 
 
