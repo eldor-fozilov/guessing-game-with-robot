@@ -12,7 +12,24 @@ Eldor Fozilov, Gahyeon Shim, Minji Kim, Seongjae Lee, Sunhong Ahn, and Youngbin 
 <!-- ![Example](images/ui.png) -->
 <!-- <img src="images/ui.png" alt="Logo" width="700"> -->
 
-<img src="images/ui.png" alt="Logo" style="width:70%; height:auto;">
+<img src="images/ui.png" alt="Logo" style="width:60%; height:auto;">
+
+### User Interface Demo (Pipeline 1 & 2)
+
+<table>
+  <tr>
+    <td>
+      <a href="https://unistackr0-my.sharepoint.com/:v:/g/personal/eldorfozilov_unist_ac_kr/EQQxloqLBaVHmk9ogDUqzccBt-_sPMXCFsgGWKKR6BOAOw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=TTXwPc">
+        <img src="images/ui_demo_pipeline1.png" alt="UI Demo (pipeline 1)" width="400">
+      </a>
+    </td>
+    <td>
+      <a href="https://unistackr0-my.sharepoint.com/:v:/g/personal/eldorfozilov_unist_ac_kr/EUaSgQfl1ZBMktMkiMT7DZQBWchSHulDnJOqF5jbpbx_Hg?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=8tygYn">
+        <img src="images/ui_demo_pipeline2.png" alt="UI Demo (pipeline 2)" width="400">
+      </a>
+    </td>
+  </tr>
+</table>
 
 #### Environment Installation Guideline
 
