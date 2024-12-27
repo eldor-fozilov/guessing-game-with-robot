@@ -86,7 +86,4 @@ Common Install
 
 
 #### Run
-
-Server : `pyhton ./server/run_server.ipynb`
-
-Client : `pyhton ./ui/run.py`
+`pyhton ./ui/run.py`
