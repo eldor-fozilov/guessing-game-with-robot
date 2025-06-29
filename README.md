@@ -1,8 +1,13 @@
 ## Guessing Game with Robot Arm
 
+### Project Sumary
+We built a robotic guessing game system that integrates multimodal perception and precise motion control. The system combines object detection, reasoning,
+and motion planning to infer and deliver target objects based on user-provided clues. Experimental evaluations validate its
+effectiveness in reasoning, object manipulation, and real-time operation, demonstrating its potential for dynamic human-robot interaction.\
+Project details: [link](https://github.com/eldor-fozilov/guessing-game-with-robot/blob/main/PROJECT.pdf)
+
 #### Team
 Eldor Fozilov, Gahyeon Shim, Minji Kim, Seongjae Lee, Sunhong Ahn, and Youngbin Ki
-
 
 ### Demonstration Video
 [![Video Label](http://img.youtube.com/vi/iiVfGvJUs00/0.jpg)](https://youtu.be/iiVfGvJUs00)
